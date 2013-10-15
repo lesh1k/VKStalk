@@ -17,20 +17,20 @@ class VKStalk:
 		self.user_id = user_id
 		self.user_data = {}
 		self.prev_user_data = {}
-		self.time_step = 30
+		self.time_step = 15
 		self.last_log = ''
 		self.log = ''
 		self.last_error = 'No errors yet =)'
 		self.error_counter = 0
 		self.logs_counter = 0
 		self.version = "| VKStalk ver. 4.0.0 BETA |"
-		self.version = '='*((42-len(self.version))/2) + self.version + '='*((42-len(self.version))/2) + '\n\n'
+		self.version = '\n' + '='*((42-len(self.version))/2) + self.version + '='*((42-len(self.version))/2) + '\n\n'
 		self.birth = datetime.now().strftime("%d-%B-%Y at %H:%M")
 
 		#Clear screen
 		os.system( [ 'clear', 'cls' ][ os.name == 'nt' ] )
 		#Print greeting message
-		print 'VKStalk successfully launched! Have a tea and analyze the results ;)\n'
+		print 'VKStalk successfully launched! Have a tea and analyze the results ;)'
 
 	def cookSoup(self):
 		# Return the soup obtained from scrapping the page or False if any
@@ -271,7 +271,8 @@ class VKStalk:
 					    self.user_data['last_visit'] +
 					    '\nStatus: ' + self.user_data['status'] + '\n\n'
 				  		)
-			if self.log != self.last_log:
+
+			if self.log != self.last_log[self.last_log.find(self.user_data['name']):]:
 				try:
 					#increase logs counter
 					self.logs_counter += 1
@@ -289,9 +290,21 @@ class VKStalk:
 								'\n\n' + '='*14 + '| LATEST LOG |' + '='*14 + '\n\n' + self.log +
 								'='*14 + '| LAST ERROR |' + '='*14 + '\n\n' + self.last_error
 								)
-					
-					
 					print(self.console_log)
+				except:
+					#Here be the Error logging line#
+					# return False
+					pass
+			else:
+				try:
+					self.console_log = (
+									self.version + 'Launched on ' + self.birth +
+									'\nUser ID: ' + self.user_id + '.\nUser Name: ' + self.user_data['name']+
+									'\nLogs written: ' + str(self.logs_counter)+
+									'\nErrors occurred: ' + str(self.error_counter) +
+									'\n\n' + '='*14 + '| LATEST LOG |' + '='*14 + '\n\n' + self.log +
+									'='*14 + '| LAST ERROR |' + '='*14 + '\n\n' + self.last_error
+									)
 				except:
 					#Here be the Error logging line#
 					# return False
@@ -305,9 +318,18 @@ class VKStalk:
 			pass
 
 	def singleRequest(self):
+		print('Fetching user data...')
 		self.cookSoup()
 		self.getUserData()
+		
+		#Clear screen
+		os.system( [ 'clear', 'cls' ][ os.name == 'nt' ] )
+
 		self.writeLog('data')
 
 	def work(self):
-		pass
+		while True:
+			self.singleRequest()
+			time.sleep(self.time_step)
+			#Clear screen
+			os.system( [ 'clear', 'cls' ][ os.name == 'nt' ] )
