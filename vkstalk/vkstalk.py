@@ -23,7 +23,14 @@ class VKStalk:
 		self.last_error = 'No errors yet =)'
 		self.error_counter = 0
 		self.logs_counter = 0
-		self.version = "VKStalk ver. 4.0.0 ALPHA"
+		self.version = "| VKStalk ver. 4.0.0 BETA |"
+		self.version = '='*((42-len(self.version))/2) + self.version + '='*((42-len(self.version))/2) + '\n\n'
+		self.birth = datetime.now().strftime("%d-%B-%Y at %H:%M")
+
+		#Clear screen
+		os.system( [ 'clear', 'cls' ][ os.name == 'nt' ] )
+		#Print greeting message
+		print 'VKStalk successfully launched! Have a tea and analyze the results ;)\n'
 
 	def cookSoup(self):
 		# Return the soup obtained from scrapping the page or False if any
@@ -72,6 +79,7 @@ class VKStalk:
 		user_data['last_visit'] = '_not_found'
 		#Secondary data
 		user_data['skype'] = '_not_found'
+		user_data['site'] = '_not_found'
 		user_data['twitter'] = '_not_found'
 		user_data['instagram'] = '_not_found'
 		user_data['facebook'] = '_not_found'
@@ -151,7 +159,7 @@ class VKStalk:
 						try:
 							date_time = datetime.strptime(last_seen, "%d %B at %I:%M %p")
 							date_time = date_time - time_delta
-							user_data['last_visit'] = datetime.strftime("last seen on %B %d at %H:%M",date_time)
+							user_data['last_visit'] = 'last seen on ' + datetime.strftime("last seen on %B %d at %H:%M",date_time)
 						except:
 							#Here be the Error logging line#
 							# return False
@@ -160,7 +168,7 @@ class VKStalk:
 						try:
 							date_time = datetime.strptime(last_seen[last_seen.find('at'):], "at %I:%M %p")
 							date_time = date_time - time_delta
-							user_data['last_visit'] = datetime.strftime(last_seen[:last_seen.find('at')]+"at %H:%M",date_time)
+							user_data['last_visit'] = 'last seen ' + date_time.strftime(last_seen[:last_seen.find('at')]+"at %H:%M")
 							if ('yesterday' in last_seen) and (date_time.hour+hours_delta < 0):
 								user_data['last_visit'] = user_data['last_visit'].replace('yesterday','today')
 						except:
@@ -187,28 +195,119 @@ class VKStalk:
 		#set object user_data
 		self.user_data = user_data
 
-		def writeLog(self):
+	def writeLog(self, log_type, message='__Default LOG message.'):
 
-			#Creates the following tree if not present yet:
-			#Data-> [Logs, Errors, Debug]
+		#Creates the following tree if not present yet:
+		#Data-> [Logs, Errors, Debug]
+		current_path = '/'.join(__file__.split('/')[:-1])
+		data_folder = os.path.join(current_path, "Data")
+		error_folder = os.path.join(current_path, "Data", "Errors")
+		logs_folder = os.path.join(current_path, "Data", "Logs")
+		debug_folder = os.path.join(current_path, "Data", "Debug")
+
+		try:
+			if not os.path.exists(data_folder):
+				os.mkdir(data_folder)
+			if not os.path.exists(logs_folder):
+				os.mkdir(logs_folder)
+			if not os.path.exists(error_folder):
+				os.mkdir(error_folder)
+			if not os.path.exists(debug_folder):
+				os.mkdir(debug_folder)
+		except:
+			#Here be the Error logging line#
+			# return False
+			pass
+
+		#################LOG WRITING#########################
+		if log_type == 'data':
 			current_path = '/'.join(__file__.split('/')[:-1])
-			data_folder = os.path.join(current_path, "Data")
-			error_folder = os.path.join(current_path, "Data/Errors")
-			logs_folder = os.path.join(current_path, "Data/Logs")
-			debug_folder = os.path.join(current_path, "Data/Debug")
+			filename = time.strftime('%Y.%m.%d') + '-' + self.user_data['name'] + '.log'
+			path = os.path.join(current_path, "Data", "Logs", filename)
 
-			try:
-				if not os.path.exists(data_folder):
-					os.mkdir(data_folder)
-				if not os.path.exists(logs_folder):
-					os.mkdir(logs_folder)
-				if not os.path.exists(error_folder):
-					os.mkdir(error_folder)
-				if not os.path.exists(debug_folder):
-					os.mkdir(debug_folder)
-			except:
-				#Here be the Error logging line#
-				# return False
-				pass
+			if not os.path.isfile(path):#first log to file
+				general_info = (
+								'Log file created on' + time.strftime(' %d-%B-%Y at %H:%M:%S') +
+								'\n-----------------------------------------------' +
+								'\nUsername: '+self.user_data['name'] +
+								'\nLast visit: ' + self.user_data['last_visit'] + 
+								'\nStatus: ' + self.user_data['status'] + 
+								'\n-----------------------------------------------' +
+								'\nBirthday: ' + self.user_data['birthday'] + 
+								'\nSkype: ' + self.user_data['skype'] + 
+								'\nSite: ' + self.user_data['site'] + 								
+								'\nTwitter: ' + self.user_data['twitter'] + 
+								'\nInstagram: ' + self.user_data['instagram'] + 
+								'\nFacebook: ' + self.user_data['facebook'] + 
+								'\nPhone: ' + self.user_data['phone'] +
+								'\nUniversity: ' + self.user_data['university'] +
+								'\nPhoto: ' + self.user_data['photo'] +
+								'\nNumber of photos: ' + self.user_data['number_of_photos'] +
+								'\nNumber of posts: ' + self.user_data['number_of_posts'] +
+								'\nNumber of gifts: ' + self.user_data['number_of_gifts'] +
+								'\nNumber of friends: ' + self.user_data['number_of_friends'] +
+								'\n-----------------------------------------------' +
+								'\n\n\n'
+								)
 
-			#################LOG WRITING#########################
+				fHandle = open(path,'a')
+				fHandle.write(general_info)
+				fHandle.close()
+
+			# Setup logger
+			logging.basicConfig(
+								filename=path, filemode='a', level=logging.INFO,
+								format='%(message)s',
+								)
+			logger = logging.getLogger('data_logger')
+			logger.setLevel(logging.INFO)
+
+			#Save prev. log file
+			self.last_log = self.log
+
+			#Common log to file
+			self.log = (
+						self.user_data['name'] + '  --  ' +
+					    self.user_data['last_visit'] +
+					    '\nStatus: ' + self.user_data['status'] + '\n\n'
+				  		)
+			if self.log != self.last_log:
+				try:
+					#increase logs counter
+					self.logs_counter += 1
+					#update last log to the current one
+					self.last_log = self.log
+					self.log_time = datetime.strftime(datetime.now(),'>>>Date: %d-%m-%Y. Time: %H:%M:%S\n')
+					self.log = self.log_time + self.log
+					logger.info(self.log)
+					#prepare output to console
+					self.console_log = (
+								self.version + 'Launched on ' + self.birth +
+								'\nUser ID: ' + self.user_id + '.\nUser Name: ' + self.user_data['name']+
+								'\nLogs written: ' + str(self.logs_counter)+
+								'\nErrors occurred: ' + str(self.error_counter) +
+								'\n\n' + '='*14 + '| LATEST LOG |' + '='*14 + '\n\n' + self.log +
+								'='*14 + '| LAST ERROR |' + '='*14 + '\n\n' + self.last_error
+								)
+					
+					
+					print(self.console_log)
+				except:
+					#Here be the Error logging line#
+					# return False
+					pass
+
+		elif log_type == 'info':
+			pass
+		elif log_type == 'error':
+			pass
+		elif log_type == 'debug':
+			pass
+
+	def singleRequest(self):
+		self.cookSoup()
+		self.getUserData()
+		self.writeLog('data')
+
+	def work(self):
+		pass
