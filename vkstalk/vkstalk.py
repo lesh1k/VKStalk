@@ -8,6 +8,7 @@ from threading import Thread
 import string
 from datetime import datetime, timedelta
 import logging
+import unicodedata
 
 #Class definition
 class VKStalk:
@@ -16,7 +17,7 @@ class VKStalk:
 	def __init__(self, user_id):
 		self.user_id = user_id
 		self.user_data = {}
-		self.prev_user_data = {}
+		self.prev_user_data = {'online':'_not_found', 'status':'_not_found'}
 		self.time_step = 15
 		self.last_log = ''
 		self.log = ''
@@ -31,6 +32,23 @@ class VKStalk:
 		os.system( [ 'clear', 'cls' ][ os.name == 'nt' ] )
 		#Print greeting message
 		print 'VKStalk successfully launched! Have a tea and analyze the results ;)'
+
+	def normalizeUnicode(self):
+		# Normalize and encode to ascii_letters
+		for key in user_data.keys():
+			if type(user_data[key]) is unicode:
+				user_data[key] = unicodedata.normalize('NFKD', user_data[key]).encode('ascii','ignore')
+
+	def prepareConsoleLog(self):
+		#prepare output to console
+		self.console_log = (
+					self.version + 'Launched on ' + self.birth +
+					'\nUser ID: ' + self.user_id + '\nUser Name: ' + self.user_data['name']+
+					'\nLogs written: ' + str(self.logs_counter)+
+					'\nErrors occurred: ' + str(self.error_counter) +
+					'\n\n' + '='*14 + '| LATEST LOG |' + '='*14 + '\n\n' + self.log +
+					'='*14 + '| LAST ERROR |' + '='*14 + '\n\n' + self.last_error
+					)
 
 	def cookSoup(self):
 		# Return the soup obtained from scrapping the page or False if any
@@ -95,7 +113,8 @@ class VKStalk:
 		#:Data fetching
 		###:Name
 		try:
-			user_data['name']=codecs.encode(self.soup.html.head.title.text,'utf8')
+			user_data['name']=self.soup.html.head.title.text
+			self.normalizeUnicode(user_data)
 			valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)#for filename verification
 		
 			#Sanitize user name
@@ -141,13 +160,13 @@ class VKStalk:
 				user_data['last_visit'] = last_seen
 				last_seen = last_seen.replace('last seen ', '')
 				
-				if 'am' in last_seen or 'pm' in last_seen:
+				if ('am' in last_seen) or ('pm' in last_seen):
 					# Set timedelta according to daylight savings time
 					if time.localtime().tm_isdst == 1:
-						hours_delta = -1
+						hours_delta = 1
 						time_delta = timedelta(hours=hours_delta)
 					else:
-						hours_delta = -2
+						hours_delta = 2
 						time_delta = timedelta(hours=hours_delta)
 
 					for c in last_seen[:last_seen.find('at')]:
@@ -158,8 +177,11 @@ class VKStalk:
 					if date_found:
 						try:
 							date_time = datetime.strptime(last_seen, "%d %B at %I:%M %p")
+							#By default year is 1900 and if time 00.41, minus delta it gets year
+							#1899 and raises an error
+							date_time = date_time.replace(year=datetime.now().year)
 							date_time = date_time - time_delta
-							user_data['last_visit'] = 'last seen on ' + datetime.strftime("last seen on %B %d at %H:%M",date_time)
+							user_data['last_visit'] = date_time.strftime("last seen on %B %d at %H:%M")
 						except:
 							#Here be the Error logging line#
 							# return False
@@ -167,10 +189,15 @@ class VKStalk:
 					else:
 						try:
 							date_time = datetime.strptime(last_seen[last_seen.find('at'):], "at %I:%M %p")
+							#By default year is 1900 and if time 00.41, minus delta it gets year
+							#1899 and raises an error
+							date_time = date_time.replace(year=datetime.now().year)
 							date_time = date_time - time_delta
 							user_data['last_visit'] = 'last seen ' + date_time.strftime(last_seen[:last_seen.find('at')]+"at %H:%M")
-							if ('yesterday' in last_seen) and (date_time.hour+hours_delta < 0):
+							if ('yesterday' in last_seen) and (date_time.hour-hours_delta < 0):
 								user_data['last_visit'] = user_data['last_visit'].replace('yesterday','today')
+							elif ('today' in last_seen) and (date_time.hour+hours_delta > 23):
+								user_data['last_visit'] = user_data['last_visit'].replace('today','yesterday')
 						except:
 							#Here be the Error logging line#
 							# return False
@@ -180,7 +207,7 @@ class VKStalk:
 					user_data['online']=True
 					user_data['last_visit']='Online'			
 				else:#print raw last_seen data
-					user_data['last_visit']=last_seen#+' That is raw data!'
+					user_data['last_visit'] = 'last seen ' + last_seen#+' That is raw data!'
 			else:
 			    user_data['online']=True
 			    user_data['last_visit']='Online'
@@ -271,25 +298,20 @@ class VKStalk:
 					    self.user_data['last_visit'] +
 					    '\nStatus: ' + self.user_data['status'] + '\n\n'
 				  		)
+			#Generating a timestamp and adding it to the log string
+			self.log_time = datetime.strftime(datetime.now(),'>>>Date: %d-%m-%Y. Time: %H:%M:%S\n')
+			self.log = self.log_time + self.log
 
-			if self.log != self.last_log[self.last_log.find(self.user_data['name']):]:
+			#if there's new user data,  a new status or online changed from False to True or True to False
+			#write the new log to file
+			if (self.user_data['online']!=self.prev_user_data['online']) or (self.user_data['status']!=self.prev_user_data['status']):
 				try:
 					#increase logs counter
 					self.logs_counter += 1
-					#update last log to the current one
-					self.last_log = self.log
-					self.log_time = datetime.strftime(datetime.now(),'>>>Date: %d-%m-%Y. Time: %H:%M:%S\n')
-					self.log = self.log_time + self.log
+					#update last user_data to the current one
+					self.prev_user_data = self.user_data
 					logger.info(self.log)
-					#prepare output to console
-					self.console_log = (
-								self.version + 'Launched on ' + self.birth +
-								'\nUser ID: ' + self.user_id + '.\nUser Name: ' + self.user_data['name']+
-								'\nLogs written: ' + str(self.logs_counter)+
-								'\nErrors occurred: ' + str(self.error_counter) +
-								'\n\n' + '='*14 + '| LATEST LOG |' + '='*14 + '\n\n' + self.log +
-								'='*14 + '| LAST ERROR |' + '='*14 + '\n\n' + self.last_error
-								)
+					self.prepareConsoleLog()
 					print(self.console_log)
 				except:
 					#Here be the Error logging line#
@@ -297,14 +319,8 @@ class VKStalk:
 					pass
 			else:
 				try:
-					self.console_log = (
-									self.version + 'Launched on ' + self.birth +
-									'\nUser ID: ' + self.user_id + '.\nUser Name: ' + self.user_data['name']+
-									'\nLogs written: ' + str(self.logs_counter)+
-									'\nErrors occurred: ' + str(self.error_counter) +
-									'\n\n' + '='*14 + '| LATEST LOG |' + '='*14 + '\n\n' + self.log +
-									'='*14 + '| LAST ERROR |' + '='*14 + '\n\n' + self.last_error
-									)
+					self.prepareConsoleLog()
+					print(self.console_log)
 				except:
 					#Here be the Error logging line#
 					# return False
@@ -331,5 +347,3 @@ class VKStalk:
 		while True:
 			self.singleRequest()
 			time.sleep(self.time_step)
-			#Clear screen
-			os.system( [ 'clear', 'cls' ][ os.name == 'nt' ] )
