@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 import logging
 import unicodedata
 
-#Class definition
+
 class VKStalk:
 #Class description
 
@@ -253,6 +253,7 @@ class VKStalk:
 			path = os.path.join(current_path, "Data", "Logs", filename)
 
 			if not os.path.isfile(path):#first log to file
+				first_log = True
 				general_info = (
 								'Log file created on' + time.strftime(' %d-%B-%Y at %H:%M:%S') +
 								'\n-----------------------------------------------' +
@@ -304,7 +305,7 @@ class VKStalk:
 
 			#if there's new user data,  a new status or online changed from False to True or True to False
 			#write the new log to file
-			if (self.user_data['online']!=self.prev_user_data['online']) or (self.user_data['status']!=self.prev_user_data['status']):
+			if first_log or (self.user_data['online']!=self.prev_user_data['online']) or (self.user_data['status']!=self.prev_user_data['status']):
 				try:
 					#increase logs counter
 					self.logs_counter += 1
@@ -328,8 +329,47 @@ class VKStalk:
 
 		elif log_type == 'info':
 			pass
+
 		elif log_type == 'error':
-			pass
+			current_path = '/'.join(__file__.split('/')[:-1])
+			filename = '[ERRORS]' + '-' + time.strftime('%Y.%m.%d') + '-' + self.user_data['name'] + '.log'
+			path = os.path.join(current_path, "Data", "Errors", filename)
+
+			if not os.path.isfile(path):#first log to file
+				general_info = (
+								'Log file created on' + time.strftime(' %d-%B-%Y at %H:%M:%S') +
+								'\n-----------------------------------------------' + '\n\n\n'
+								)
+
+				fHandle = open(path,'a')
+				fHandle.write(general_info)
+				fHandle.close()
+
+			# Setup logger
+			logging.basicConfig(
+								filename=path, filemode='a', level=logging.ERROR,
+								format='[%(level)s] - [%(asctime)s]: %(message)s\n',
+								datefmt='%d-%m-%Y at %H:%M:%S'
+								)
+			logger = logging.getLogger('error_logger')
+			logger.setLevel(logging.ERROR)
+
+			#Common log to file
+			self.last_error = (
+						datetime.strftime(datetime.now(),'>>>Date: %d-%m-%Y. Time: %H:%M:%S\n') +
+						self.user_data['name'] + '  --  ' +
+					    self.user_data['last_visit'] +
+					    '\nStatus: ' + self.user_data['status'] + '\n\n'
+				  		)
+
+			try:
+				logger.error(message)
+				self.error_counter += 1
+			except:
+				#Here be the Error logging line#
+				# return False
+				pass
+
 		elif log_type == 'debug':
 			pass
 
