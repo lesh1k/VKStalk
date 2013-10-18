@@ -253,7 +253,6 @@ class VKStalk:
 			path = os.path.join(current_path, "Data", "Logs", filename)
 
 			if not os.path.isfile(path):#first log to file
-				first_log = True
 				general_info = (
 								'Log file created on' + time.strftime(' %d-%B-%Y at %H:%M:%S') +
 								'\n-----------------------------------------------' +
@@ -305,7 +304,7 @@ class VKStalk:
 
 			#if there's new user data,  a new status or online changed from False to True or True to False
 			#write the new log to file
-			if first_log or (self.user_data['online']!=self.prev_user_data['online']) or (self.user_data['status']!=self.prev_user_data['status']):
+			if (self.user_data['online']!=self.prev_user_data['online']) or (self.user_data['status']!=self.prev_user_data['status']):
 				try:
 					#increase logs counter
 					self.logs_counter += 1
