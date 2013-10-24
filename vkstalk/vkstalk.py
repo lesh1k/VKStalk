@@ -95,6 +95,7 @@ class VKStalk:
 		user_data['status'] = '_not_found'
 		user_data['online'] = '_not_found'
 		user_data['last_visit'] = '_not_found'
+		user_data['mobile_version'] = False
 		#Secondary data
 		user_data['skype'] = '_not_found'
 		user_data['site'] = '_not_found'
@@ -137,6 +138,15 @@ class VKStalk:
 			status = self.soup.find('div',{'class':'pp_status'})
 			if status:
 				user_data['status'] = status.text
+
+		###:Mobile version or not
+		# try:
+		# 	if self.soup.find('b',{'class':'lvi mlvi'}) != None:
+		# 		user_data['mobile_version'] = True
+		# except:
+		# 	#Here be the Error logging line#
+		# 	# return False
+		# 	pass
 
 		###:Online OR not [last seen time]
 		try:
@@ -205,12 +215,16 @@ class VKStalk:
 
 				elif last_seen.lower()=='online':
 					user_data['online']=True
-					user_data['last_visit']='Online'			
+					user_data['last_visit']='Online'
+					if user_data['mobile_version']:
+						user_data['last_visit'] += ' [Mobile]'
 				else:#print raw last_seen data
 					user_data['last_visit'] = 'last seen ' + last_seen#+' That is raw data!'
 			else:
 			    user_data['online']=True
 			    user_data['last_visit']='Online'
+			    if user_data['mobile_version']:
+						user_data['last_visit'] += ' [Mobile]'
 
 		except:
 			#Here be the Error logging line#
