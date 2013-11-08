@@ -24,7 +24,7 @@ class VKStalk:
         self.last_error = 'No errors yet =)'
         self.error_counter = 0
         self.logs_counter = 0
-        self.version = "| VKStalk ver. 4.0.0 BETA 2|"
+        self.version = "| VKStalk ver. 4.0.0 BETA 3|"
         self.version = '\n' + '='*((42-len(self.version))/2) + self.version + '='*((42-len(self.version))/2) + '\n\n'
         self.birth = datetime.now().strftime("%d-%B-%Y at %H:%M")
         self.data_logger_is_built = False
@@ -134,13 +134,18 @@ class VKStalk:
             WriteDebugLog('Fetching HTML page')
         
         try:
-            cHandle = urllib2.urlopen(url)
+            cHandle = urllib2.urlopen(url, timeout=20)
             self.html = cHandle.read()
             cHandle.close()
         except:
             self.error_counter += 1
             self.last_error = 'Could not fetch HTML page'
             self.error_logger_is_built = WriteErrorLog(self.last_error, self.error_logger_is_built)
+            self.last_error = datetime.strftime(datetime.now(),'[Date: %d-%m-%Y. Time: %H:%M:%S] - ') + self.last_error
+            ConsoleLog('Could not fetch HTML page. Retrying in 5 seconds')
+            time.sleep(5)
+            if self.debug_mode:
+                WriteDebugLog('Restarting request.')
             return False
 
         #set soup
@@ -149,6 +154,8 @@ class VKStalk:
         self.soup = BeautifulSoup(self.html)
         if self.debug_mode:
             WriteDebugLog('Cooking soup finished')
+
+        return True
 
     def GetUserData(self):
         # Returns a dictionary with user data
@@ -207,6 +214,7 @@ class VKStalk:
             self.error_counter += 1
             self.last_error = 'Could not set username'
             self.error_logger_is_built = WriteErrorLog(self.last_error, self.error_logger_is_built)
+            self.last_error =  datetime.strftime(datetime.now(),'[Date: %d-%m-%Y. Time: %H:%M:%S] - ') + self.last_error
             return False
 
         ###:Status
@@ -281,6 +289,7 @@ class VKStalk:
                             self.error_counter += 1
                             self.last_error = 'Error while parsing date/time in last_seen'
                             self.error_logger_is_built = WriteErrorLog(self.last_error, self.error_logger_is_built)
+                            self.last_error =  datetime.strftime(datetime.now(),'[Date: %d-%m-%Y. Time: %H:%M:%S] - ') + self.last_error
                             return False
                     else:
                         try:
@@ -298,6 +307,7 @@ class VKStalk:
                             self.error_counter += 1
                             self.last_error = 'Error while parsing time in last_seen'
                             self.error_logger_is_built = WriteErrorLog(self.last_error, self.error_logger_is_built)
+                            self.last_error =  datetime.strftime(datetime.now(),'[Date: %d-%m-%Y. Time: %H:%M:%S] - ') + self.last_error
                             return False
 
                 elif last_seen.lower()=='online':
@@ -317,6 +327,7 @@ class VKStalk:
             self.error_counter += 1
             self.last_error = "Could not determine user's online status."
             self.error_logger_is_built = WriteErrorLog(self.last_error, self.error_logger_is_built)
+            self.last_error =  datetime.strftime(datetime.now(),'[Date: %d-%m-%Y. Time: %H:%M:%S] - ') + self.last_error
             return False
 
         #Secondary data fectching
@@ -324,23 +335,32 @@ class VKStalk:
         #set object user_data
         self.user_data = user_data
 
+        return True
+
     ######Logging part######
     def ShowWriteInfo(self):
         #if there's new user data,  a new status or online changed from False to True or True to False
         #write the new log to file
         self.PrepareLog()
-        if (self.user_data['online']!=self.prev_user_data['online']) or (self.user_data['status']!=self.prev_user_data['status']):
+        if ((self.user_data['online']!=self.prev_user_data['online'])
+            or (self.user_data['status']!=self.prev_user_data['status'])
+            or (self.user_data['name']!=self.prev_user_data['name'])):
             if self.debug_mode:
                 WriteDebugLog('Writing log to file')
             try:
                 #increase logs counter
                 self.logs_counter += 1
                 filename = time.strftime('%Y.%m.%d') + '-' + self.user_data['name'] + '.log'
-                self.data_logger_is_built = WriteDataLog(self.log, filename, self.data_logger_is_built)
+                self.data_logger_is_built = WriteDataLog(self.log, filename, self.data_logger_is_built and self.user_data in filename)
             except:
                 self.error_counter += 1
                 self.last_error = 'Could not write Data log to file'
                 self.error_logger_is_built = WriteErrorLog(self.last_error, self.error_logger_is_built)
+                self.last_error =  datetime.strftime(datetime.now(),'[Date: %d-%m-%Y. Time: %H:%M:%S] - ') + self.last_error
+                ConsoleLog('Could not write log. Retrying in 5 seconds')
+                time.sleep(5)
+                if self.debug_mode:
+                    WriteDebugLog('Restarting request.')
                 return False
             #Save previous data
             #update last user_data to the current one
@@ -353,7 +373,13 @@ class VKStalk:
             self.error_counter += 1
             self.last_error = 'Could not output log to console.'
             self.error_logger_is_built = WriteErrorLog(self.last_error, self.error_logger_is_built)
-            pass
+            self.last_error =  datetime.strftime(datetime.now(),'[Date: %d-%m-%Y. Time: %H:%M:%S] - ') + self.last_error
+            ConsoleLog('Could not write console log. Retrying in 5 seconds')
+            time.sleep(5)
+            if self.debug_mode:
+                WriteDebugLog('Restarting request.')
+            return False
+        return True
 
     #######################################END logging#######################################
 
@@ -361,13 +387,17 @@ class VKStalk:
         ConsoleLog('Fetching user data...')
         if self.debug_mode:
             WriteDebugLog('Start single request')
-        self.CookSoup()
-        self.GetUserData()
+        if self.CookSoup() == False:
+            return False
+        if self.GetUserData() == False:
+            return False
         
         #Clear screen
         os.system( [ 'clear', 'cls' ][ os.name == 'nt' ] )
 
-        self.ShowWriteInfo()
+        if not self.ShowWriteInfo():
+            return False
+
         if self.debug_mode:
             WriteDebugLog('Finished single request')
 
@@ -375,5 +405,11 @@ class VKStalk:
         if self.debug_mode:
             WriteDebugLog('Begin work')
         while True:
-            self.SingleRequest()
+            if self.SingleRequest() == False:
+                break
             time.sleep(self.time_step)
+        ##RESTART APP###
+        #Clear screen
+        os.system( [ 'clear', 'cls' ][ os.name == 'nt' ] )
+        #Restart main cycle
+        self.Work()
