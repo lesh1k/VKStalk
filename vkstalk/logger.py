@@ -79,8 +79,11 @@ def WriteErrorLog(message, is_setup=True):
         logger = logging.getLogger('error_logger')
         logger.handlers = []
         #setup logger
-        SetupLogger('error_logger', path, '%(levelname)s :: %(asctime)s :: %(message)s', '[Date: %d-%m-%Y. Time: %H:%M:%S]',
-                    'a', logging.ERROR, add_stream_handler=False, add_file_handler=True)
+        SetupLogger(
+                    'error_logger', path, log_format='%(levelname)s :: %(asctime)s :: %(message)s',
+                    log_date_format='[Date: %d-%m-%Y. Time: %H:%M:%S]', log_file_mode='a', level=logging.ERROR,
+                    add_stream_handler=False, add_file_handler=True
+                    )
 
     logger = logging.getLogger('error_logger')
     
@@ -103,8 +106,11 @@ def WriteDebugLog(message, is_setup=True):
         logger = logging.getLogger('debug_logger')
         logger.handlers = []
         #setup logger
-        SetupLogger('debug_logger', path, '%(levelname)s :: %(asctime)s :: %(message)s', '[Date: %d-%m-%Y. Time: %H:%M:%S]',
-                    'a', logging.DEBUG, add_stream_handler=False, add_file_handler=True)
+        SetupLogger(
+                    'debug_logger', path, log_format='%(levelname)s :: %(asctime)s :: %(message)s',
+                    log_date_format='[Date: %d-%m-%Y. Time: %H:%M:%S]', log_file_mode='a',
+                    level=logging.DEBUG, add_stream_handler=False, add_file_handler=True
+                    )
 
     logger = logging.getLogger('debug_logger')
     
@@ -120,8 +126,10 @@ def ConsoleLog(message, is_setup=True):
     #Outputs info to console
     if not is_setup:
         #setup logger
-        SetupLogger('console_logger', log_format='%(message)s',
-                    level=logging.INFO, add_stream_handler=True, add_file_handler=False)
+        SetupLogger(
+                    'console_logger', log_format='%(message)s',
+                    level=logging.INFO, add_stream_handler=True, add_file_handler=False
+                    )
     logger = logging.getLogger('console_logger')
     try:
         logger.info(message)

@@ -13,28 +13,54 @@ from logger import CreateLogFolders, WriteDataLog, WriteErrorLog, WriteDebugLog,
 
 class VKStalk:
 #Class description
+# def __init__(self, user_id, debug_mode=False):
+# def NormalizeUnicode(self, user_data):
+#     transform all non standard utf8 text to ascii
+# 
+# def PrepareLog(self):
+#     using fetched data prepares a log message to console
+#     and a log message that might be written to file. Sets
+#     self.console_log, self.last_log and self.log
+# 
+# def CookSoup(self):
+#     makes BeautifulSoup from fetched HTML
+# 
+# def GetUserData(self):
+#     parses the soup and gets all the required data
+# 
+# def ShowWriteInfo(self):
+#     Outputs self.console_log to console 
+#     and if necessary writes self.log to file
+# 
+# def SingleRequest(self):
+#     one call that gives the result. It fetches, parses data.
+#     Then prepares output data and presents it.
+# 
+# def Work(self):
+#     Starts an infinite loop (while True) calling self.SingleRequest()
 
     def __init__(self, user_id, debug_mode=False):
         self.user_id = user_id
         self.user_data = {}
-        self.prev_user_data = {'online':'_not_found', 'status':'_not_found'}
+        self.prev_user_data = {'online':'_not_found', 'status':'_not_found_first_start'}
         self.time_step = 15
         self.last_log = ''
         self.log = ''
         self.last_error = 'No errors yet =)'
         self.error_counter = 0
         self.logs_counter = 0
-        self.version = "| VKStalk ver. 4.0.0 BETA 3|"
-        self.version = '\n' + '='*((42-len(self.version))/2) + self.version + '='*((42-len(self.version))/2) + '\n\n'
+        self.version = "| VKStalk ver. 4.0.0 BETA 3 |"
         self.birth = datetime.now().strftime("%d-%B-%Y at %H:%M")
         self.data_logger_is_built = False
         self.error_logger_is_built = False
         self.debug_mode = debug_mode
 
+        #pretify program version output
+        self.version = '\n' + '='*((42-len(self.version))/2) + self.version + '='*((42-len(self.version))/2) + '\n\n'
+        #create necessary folders
         CreateLogFolders()
         if self.debug_mode:
             WriteDebugLog('Log folders created', False)
-
         #Clear screen
         os.system( [ 'clear', 'cls' ][ os.name == 'nt' ] )
         #Print greeting message
@@ -48,44 +74,41 @@ class VKStalk:
 
     def PrepareLog(self):
         if self.debug_mode:
-            WriteDebugLog('Start preparing log')
+            WriteDebugLog('Preparing log')
         #Save prev. log file
         self.last_log = self.log
-
-        self.general_info = ('Log file created on' + time.strftime(' %d-%B-%Y at %H:%M:%S') +
-                        '\nUsername: '+self.user_data['name'] +
-                        '\nStatus: ' + self.user_data['status'] + 
-                        '\nBirthday: ' + self.user_data['birthday'] + 
-                        '\nSkype: ' + self.user_data['skype'] + 
-                        '\nSite: ' + self.user_data['site'] + 
-                        '\nLast visit: ' + self.user_data['last_visit'] + 
-                        '\nTwitter: ' + self.user_data['twitter'] + 
-                        '\nInstagram: ' + self.user_data['instagram'] + 
-                        '\nFacebook: ' + self.user_data['facebook'] + 
-                        '\nPhone: ' + self.user_data['phone'] +
-                        '\nUniversity: ' + self.user_data['university'] +
-                        '\nPhoto: ' + self.user_data['photo'] +
-                        '\nNumber of photos: ' + self.user_data['number_of_photos'] +
-                        '\nNumber of posts: ' + self.user_data['number_of_posts'] +
-                        '\nNumber of gifts: ' + self.user_data['number_of_gifts'] +
-                        '\nNumber of friends: ' + self.user_data['number_of_friends'] +
-                        '\n\n\n\n'
-                        )
+        self.general_info = (
+                            'Log file created on' + time.strftime(' %d-%B-%Y at %H:%M:%S') +
+                            '\nUsername: '+ self.user_data['name'] +
+                            '\nStatus: ' + self.user_data['status'] + 
+                            '\nBirthday: ' + self.user_data['birthday'] + 
+                            '\nSkype: ' + self.user_data['skype'] + 
+                            '\nSite: ' + self.user_data['site'] + 
+                            '\nLast visit: ' + self.user_data['last_visit'] + 
+                            '\nTwitter: ' + self.user_data['twitter'] + 
+                            '\nInstagram: ' + self.user_data['instagram'] + 
+                            '\nFacebook: ' + self.user_data['facebook'] + 
+                            '\nPhone: ' + self.user_data['phone'] +
+                            '\nUniversity: ' + self.user_data['university'] +
+                            '\nPhoto: ' + self.user_data['photo'] +
+                            '\nNumber of photos: ' + self.user_data['number_of_photos'] +
+                            '\nNumber of posts: ' + self.user_data['number_of_posts'] +
+                            '\nNumber of gifts: ' + self.user_data['number_of_gifts'] +
+                            '\nNumber of friends: ' + self.user_data['number_of_friends'] +
+                            '\n\n\n\n'
+                            )
         if self.debug_mode:
-            WriteDebugLog('Set general info')
-
+            WriteDebugLog('General info set')
         #Common log to file
         self.log = (
                     self.user_data['name'] + '  --  ' +
                     self.user_data['last_visit'] +
                     '\nStatus: ' + self.user_data['status'] + '\n\n'
                     )
-
         #Generating a timestamp and adding it to the log string
         self.log_time = datetime.strftime(datetime.now(),'>>>Date: %d-%m-%Y. Time: %H:%M:%S\n')
         self.log = self.log_time + self.log
-
-        #prepare output to console
+        #Prepare output to console
         self.console_log = (
                     self.version + 'Launched on ' + self.birth +
                     '\nUser ID: ' + self.user_id + '\nUser Name: ' + self.user_data['name']+
@@ -116,7 +139,7 @@ class VKStalk:
 
         # Target URLs for VK and Mobile VK
         url='http://vk.com/'
-        url_mobile='http://m.vk.com/'
+        # url_mobile='http://m.vk.com/'
 
         #generate user specific URLs
         if self.debug_mode:
@@ -124,10 +147,10 @@ class VKStalk:
 
         if self.user_id.isdigit():
             url += 'id' + self.user_id
-            url_mobile += 'id' + self.user_id
+            # url_mobile += 'id' + self.user_id
         else:
             url +=  self.user_id
-            url_mobile += self.user_id
+            # url_mobile += self.user_id
 
         #requesting the page
         if self.debug_mode:
@@ -399,7 +422,7 @@ class VKStalk:
             return False
 
         if self.debug_mode:
-            WriteDebugLog('Finished single request')
+            WriteDebugLog('Finished single request\n\n')
 
     def Work(self):
         if self.debug_mode:
