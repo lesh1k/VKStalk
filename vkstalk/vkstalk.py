@@ -60,8 +60,6 @@ class VKStalk:
         #pretify program version output
         self.version = '\n' + '='*((42-len(self.version))/2) + self.version + '='*((42-len(self.version))/2) + '\n\n'
         #create necessary folders
-        if self.debug_mode:
-            WriteDebugLog('Creating log folders', is_setup=False, userid=self.user_id)
         CreateLogFolders()
         if self.debug_mode:
             WriteDebugLog('Log folders created', is_setup=False, userid=self.user_id)
