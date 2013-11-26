@@ -69,11 +69,11 @@ def WriteDataLog(message, filename='', is_setup=False):
     
     return True
 
-def WriteErrorLog(message, is_setup=True):
+def WriteErrorLog(message, is_setup=True, userid=''):
     #Writes the error log to the respective file
 
     current_path = '/'.join(__file__.split('/')[:-1])
-    filename = 'ERRORS -' + time.strftime('%Y.%m.%d') + '.log'
+    filename = 'ERRORS - ' + userid + time.strftime(' - %Y.%m.%d') + '.log'
     path = os.path.join(current_path, "Data", "Errors", filename)
     if not is_setup or not os.path.exists(path):
         logger = logging.getLogger('error_logger')
@@ -96,11 +96,11 @@ def WriteErrorLog(message, is_setup=True):
     return True
 
 
-def WriteDebugLog(message, is_setup=True):
+def WriteDebugLog(message, is_setup=True, userid=''):
     #Writes the debug log to the respective file
     
     current_path = '/'.join(__file__.split('/')[:-1])
-    filename = 'DEBUG -' + time.strftime('%Y.%m.%d') + '.log'
+    filename = 'DEBUG - ' + userid + time.strftime(' - %Y.%m.%d') + '.log'
     path = os.path.join(current_path, "Data", "Debug", filename)
     if not is_setup or not os.path.exists(path):
         logger = logging.getLogger('debug_logger')
