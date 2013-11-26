@@ -191,6 +191,20 @@ class VKStalk:
         # of photos, nr of posts on the wall, nr. of audio files, nr. of
         # online friends, some of the friends who are online, nr. of friends
         # nr. of gifts. Some more data is much less relevant.
+
+        #Check if the profile is not hidden
+        if self.debug_mode:
+            WriteDebugLog('Checking if the profile is not hidden', userid=self.user_id)
+        if self.soup.find('div',{'class':'service_msg_null'}):
+            self.HandleError(
+                        step='Verifying if profile is public.',
+                        exception_msg='PRIVATE profile. Access forbidden.',
+                        debug_msg='It is a PRIVATE profile. Can be viewed only by logged in users.'
+                        )
+            exit("Private profile. Access forbidden")
+        else:
+            if self.debug_mode:
+                WriteDebugLog('Profile PUBLIC. OK!', userid=self.user_id)
         
         if self.debug_mode:
             WriteDebugLog('Initializing user_data with default values', userid=self.user_id)
