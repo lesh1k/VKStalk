@@ -60,6 +60,8 @@ class VKStalk:
         #pretify program version output
         self.version = '\n' + '='*((42-len(self.version))/2) + self.version + '='*((42-len(self.version))/2) + '\n\n'
         #create necessary folders
+        if self.debug_mode:
+            WriteDebugLog('Creating log folders', is_setup=False, userid=self.user_id)
         CreateLogFolders()
         if self.debug_mode:
             WriteDebugLog('Log folders created', is_setup=False, userid=self.user_id)
@@ -72,7 +74,7 @@ class VKStalk:
         # Normalize and encode to ascii_letters
         for key in user_data.keys():
             if type(user_data[key]) is unicode:
-                user_data[key] = unicodedata.normalize('NFKD', user_data[key]).encode('ascii','ignore')
+                user_data[key] = unicodedata.normalize('NFKD', user_data[key]).encode('utf8','ignore')
 
     def PrepareLog(self):
         if self.debug_mode:
@@ -91,6 +93,8 @@ class VKStalk:
                             '\nInstagram: ' + self.user_data['instagram'] + 
                             '\nFacebook: ' + self.user_data['facebook'] + 
                             '\nPhone: ' + self.user_data['phone'] +
+                            '\nHometown: ' + self.user_data['hometown'] +
+                            '\nCurrent city: ' + self.user_data['current_city'] +
                             '\nUniversity: ' + self.user_data['university'] +
                             '\nPhoto: ' + self.user_data['photo'] +
                             '\nNumber of photos: ' + self.user_data['number_of_photos'] +
@@ -210,10 +214,13 @@ class VKStalk:
         user_data['university'] = '_not_found'
         user_data['photo'] = '_not_found'
         user_data['birthday'] = '_not_found'
+        user_data['hometown'] = '_not_found'
+        user_data['current_city'] = '_not_found'
         user_data['number_of_photos'] = '_not_found'
         user_data['number_of_posts'] = '_not_found'
         user_data['number_of_gifts'] = '_not_found'
         user_data['number_of_friends'] = '_not_found'
+        
         if self.debug_mode:
             WriteDebugLog('Done', userid=self.user_id)
 
@@ -343,7 +350,25 @@ class VKStalk:
             return False
 
         #Secondary data fectching
+        
+        user_data['photo'] = '_not_found'
+        user_data['number_of_photos'] = '_not_found'
+        user_data['number_of_posts'] = '_not_found'
+        user_data['number_of_gifts'] = '_not_found'
+        user_data['number_of_friends'] = '_not_found'
+        secondary_data_names_list = ['Skype', 'Twitter', 'Instagram', 'University', 'Birthday', 'Facebook', 'Website', 'Phone', 'Hometown', 'Current city']
 
+        self.short_profile_info = []
+        for item in self.soup.findAll(class_='pinfo_row'):
+            text = item.text
+            if ':' in text and type(text) is unicode:
+                self.short_profile_info.append(unicodedata.normalize('NFKD', text).encode('utf8','ignore'))
+
+        for item in self.short_profile_info:
+            for data_name in secondary_data_names_list:
+                if data_name in item:
+                    user_data[data_name.lower()] = item.split(':')[-1]
+            
         #set object user_data
         self.user_data = user_data
 
