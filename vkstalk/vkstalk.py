@@ -72,7 +72,7 @@ class VKStalk:
         # Normalize and encode to ascii_letters
         for key in user_data.keys():
             if type(user_data[key]) is unicode:
-                user_data[key] = unicodedata.normalize('NFKD', user_data[key]).encode('utf8','ignore')
+                user_data[key] = unicodedata.normalize('NFKC', user_data[key]).encode('ascii','ignore')
 
     def PrepareLog(self):
         if self.debug_mode:
@@ -302,7 +302,6 @@ class VKStalk:
                         if c.isdigit():
                             date_found = True
                             break
-
                     if date_found:
                         try:
                             date_time = datetime.strptime(last_seen, "%d %B at %I:%M %p")
@@ -322,7 +321,7 @@ class VKStalk:
                             date_time = date_time.replace(year=datetime.now().year)
                             date_time = date_time - time_delta
                             user_data['last_visit'] = 'last seen ' + date_time.strftime(last_seen[:last_seen.find('at')]+"at %H:%M")
-                            if ('yesterday' in last_seen) and (date_time.hour-hours_delta < 0):
+                            if ('yesterday' in last_seen) and (date_time.hour+hours_delta < 24):
                                 user_data['last_visit'] = user_data['last_visit'].replace('yesterday','today')
                             elif ('today' in last_seen) and (date_time.hour+hours_delta > 23):
                                 user_data['last_visit'] = user_data['last_visit'].replace('today','yesterday')
@@ -359,8 +358,8 @@ class VKStalk:
         self.short_profile_info = []
         for item in self.soup.findAll(class_='pinfo_row'):
             text = item.text
-            if ':' in text and type(text) is unicode:
-                self.short_profile_info.append(unicodedata.normalize('NFKD', text).encode('utf8','ignore'))
+            if ':' in text:
+                self.short_profile_info.append(text)
 
         for item in self.short_profile_info:
             for data_name in secondary_data_names_list:
