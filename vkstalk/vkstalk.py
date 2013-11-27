@@ -95,10 +95,10 @@ class VKStalk:
                             '\nCurrent city: ' + self.user_data['current_city'] +
                             '\nUniversity: ' + self.user_data['university'] +
                             '\nPhoto: ' + self.user_data['photo'] +
-                            '\nNumber of photos: ' + self.user_data['number_of_photos'] +
-                            '\nNumber of posts: ' + self.user_data['number_of_posts'] +
-                            '\nNumber of gifts: ' + self.user_data['number_of_gifts'] +
-                            '\nNumber of friends: ' + self.user_data['number_of_friends'] +
+                            # '\nNumber of photos: ' + self.user_data['number_of_photos'] +
+                            # '\nNumber of posts: ' + self.user_data['number_of_posts'] +
+                            # '\nNumber of gifts: ' + self.user_data['number_of_gifts'] +
+                            # '\nNumber of friends: ' + self.user_data['number_of_friends'] +
                             '\n\n\n\n'
                             )
         if self.debug_mode:
@@ -228,10 +228,7 @@ class VKStalk:
         user_data['birthday'] = '_not_found'
         user_data['hometown'] = '_not_found'
         user_data['current_city'] = '_not_found'
-        user_data['number_of_photos'] = '_not_found'
-        user_data['number_of_posts'] = '_not_found'
-        user_data['number_of_gifts'] = '_not_found'
-        user_data['number_of_friends'] = '_not_found'
+        #other secondary data entries are added during runtime. These depend on the profile of the user.
         
         if self.debug_mode:
             WriteDebugLog('Done', userid=self.user_id)
@@ -269,15 +266,14 @@ class VKStalk:
                 user_data['status'] = status.text
 
         ###:Mobile version or not
-        # if self.debug_mode:
-        #     WriteDebugLog('Determining if user is using mobile VK', userid=self.user_id)
-        # try:
-        #   if self.soup.find('b',{'class':'lvi mlvi'}) != None:
-        #       user_data['mobile_version'] = True
-        # except Exception as e:
-        #   #Here be the Error logging line#
-        #   # return False
-        #   pass
+        if self.debug_mode:
+            WriteDebugLog('Determining if user is logged in from a mobile device.', userid=self.user_id)
+        try:
+          if self.soup.find(class_='mlvi') is not None: #alt: self.soup.find('b',{'class':'lvi mlvi'})
+            user_data['mobile_version'] = True
+        except Exception as e:
+            self.HandleError(step='Determining if user is logged in from a mobile device.', exception_msg=e, dump_vars=True)
+            return False
 
         ###:Online OR not [last seen time]
         if self.debug_mode:
@@ -337,7 +333,7 @@ class VKStalk:
                             user_data['last_visit'] = 'last seen ' + date_time.strftime(last_seen[:last_seen.find('at')]+"at %H:%M")
                             if ('yesterday' in last_seen) and (date_time.hour+hours_delta < 24):
                                 user_data['last_visit'] = user_data['last_visit'].replace('yesterday','today')
-                            elif ('today' in last_seen) and (date_time.hour+hours_delta > 23):
+                            elif ('today' in last_seen) and (date_time.hour+hours_delta < datetime.now().hour):
                                 user_data['last_visit'] = user_data['last_visit'].replace('today','yesterday')
                         except Exception as e:
                             self.HandleError(step="Parsing time in last_seen", exception_msg=e, dump_vars=True)
@@ -346,39 +342,65 @@ class VKStalk:
                 elif last_seen.lower()=='online':
                     user_data['online']=True
                     user_data['last_visit']='Online'
-                    if user_data['mobile_version']:
-                        user_data['last_visit'] += ' [Mobile]'
+                    
                 else:#print raw last_seen data
                     user_data['last_visit'] = 'last seen ' + last_seen#+' That is raw data!'
             else:
                 user_data['online']=True
                 user_data['last_visit']='Online'
-                if user_data['mobile_version']:
-                        user_data['last_visit'] += ' [Mobile]'
+            
+            if user_data['mobile_version']:
+                    user_data['last_visit'] += ' [Mobile]'
 
         except Exception as e:
             self.HandleError(step="Determining user's online status.", exception_msg=e, dump_vars=True)
             return False
 
         #Secondary data fectching
-        
         user_data['photo'] = '_not_found'
-        user_data['number_of_photos'] = '_not_found'
-        user_data['number_of_posts'] = '_not_found'
-        user_data['number_of_gifts'] = '_not_found'
-        user_data['number_of_friends'] = '_not_found'
-        secondary_data_names_list = ['Skype', 'Twitter', 'Instagram', 'University', 'Birthday', 'Facebook', 'Website', 'Phone', 'Hometown', 'Current city']
+        try:
+            current_step = "Fetching secondary data"
+            secondary_data_names_list = ['Skype', 'Twitter', 'Instagram', 'University', 'Birthday', 'Facebook', 'Website', 'Phone', 'Hometown', 'Current city']
+            self.short_profile_info = []
 
-        self.short_profile_info = []
-        for item in self.soup.findAll(class_='pinfo_row'):
-            text = item.text
-            if ':' in text:
-                self.short_profile_info.append(text)
+            current_step = "Parsing 'pinfo_row'"
+            for item in self.soup.findAll(class_='pinfo_row'):
+                text = item.text
+                if ':' in text:
+                    self.short_profile_info.append(text)
 
-        for item in self.short_profile_info:
-            for data_name in secondary_data_names_list:
-                if data_name in item:
-                    user_data[data_name.lower()] = item.split(':')[-1]
+            current_step = "Saving parsed data to 'user_data'"
+            for item in self.short_profile_info:
+                for data_name in secondary_data_names_list:
+                    if data_name in item:
+                        user_data[data_name.lower()] = item.split(':')[-1]
+
+            current_step = "Getting extra data (e.g. number of photos/communities)"
+            extra_data = self.soup.find(class_='profile_menu')
+            if extra_data:
+                extra_data_list = []
+                extra_data = extra_data.findAll(class_='pm_item')
+                for item in extra_data:
+                    item = item.text.lower()
+                    if 'show more' not in item:
+                        extra_data_list.append(item)
+            current_step = "Parsing extra data (e.g. number of photos/communities)"
+            for item in extra_data_list:
+                item_parts = item.split(' ')
+                key = ''
+                value = ''
+                for part in item_parts:
+                    if part.isdigit():
+                        value = part
+                    elif not part.isdigit():
+                        key += part+'_'
+                key.rstrip()
+                user_data[key] = value
+
+
+        except Exception as e:
+            self.HandleError(step=current_step, exception_msg=e, dump_vars=True, debug_msg=current_step)
+            return False
             
         #set object user_data
         self.user_data = user_data
