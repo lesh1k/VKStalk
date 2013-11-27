@@ -79,28 +79,33 @@ class VKStalk:
             WriteDebugLog('Preparing log', userid=self.user_id)
         #Save prev. log file
         self.last_log = self.log
-        self.general_info = (
-                            'Log file created on' + time.strftime(' %d-%B-%Y at %H:%M:%S') +
-                            '\nUsername: '+ self.user_data['name'] +
-                            '\nStatus: ' + self.user_data['status'] + 
-                            '\nBirthday: ' + self.user_data['birthday'] + 
-                            '\nSkype: ' + self.user_data['skype'] + 
-                            '\nSite: ' + self.user_data['site'] + 
-                            '\nLast visit: ' + self.user_data['last_visit'] + 
-                            '\nTwitter: ' + self.user_data['twitter'] + 
-                            '\nInstagram: ' + self.user_data['instagram'] + 
-                            '\nFacebook: ' + self.user_data['facebook'] + 
-                            '\nPhone: ' + self.user_data['phone'] +
-                            '\nHometown: ' + self.user_data['hometown'] +
-                            '\nCurrent city: ' + self.user_data['current_city'] +
-                            '\nUniversity: ' + self.user_data['university'] +
-                            '\nPhoto: ' + self.user_data['photo'] +
-                            # '\nNumber of photos: ' + self.user_data['number_of_photos'] +
-                            # '\nNumber of posts: ' + self.user_data['number_of_posts'] +
-                            # '\nNumber of gifts: ' + self.user_data['number_of_gifts'] +
-                            # '\nNumber of friends: ' + self.user_data['number_of_friends'] +
-                            '\n\n\n\n'
-                            )
+        # self.general_info = (
+        #                     'Log file created on' + time.strftime(' %d-%B-%Y at %H:%M:%S') +
+        #                     '\nUsername: '+ self.user_data['name'] +
+        #                     '\nStatus: ' + self.user_data['status'] + 
+        #                     '\nBirthday: ' + self.user_data['birthday'] + 
+        #                     '\nSkype: ' + self.user_data['skype'] + 
+        #                     '\nSite: ' + self.user_data['site'] + 
+        #                     '\nLast visit: ' + self.user_data['last_visit'] + 
+        #                     '\nTwitter: ' + self.user_data['twitter'] + 
+        #                     '\nInstagram: ' + self.user_data['instagram'] + 
+        #                     '\nFacebook: ' + self.user_data['facebook'] + 
+        #                     '\nPhone: ' + self.user_data['phone'] +
+        #                     '\nHometown: ' + self.user_data['hometown'] +
+        #                     '\nCurrent city: ' + self.user_data['current_city'] +
+        #                     '\nUniversity: ' + self.user_data['university'] +
+        #                     '\nPhoto: ' + self.user_data['photo'] +
+        #                     # '\nNumber of photos: ' + self.user_data['number_of_photos'] +
+        #                     # '\nNumber of posts: ' + self.user_data['number_of_posts'] +
+        #                     # '\nNumber of gifts: ' + self.user_data['number_of_gifts'] +
+        #                     # '\nNumber of friends: ' + self.user_data['number_of_friends'] +
+        #                     '\n\n\n\n'
+        #                     )
+        self.general_info = 'Log file created on' + time.strftime(' %d-%B-%Y at %H:%M:%S')
+        for key in self.user_data.keys():
+            self.general_info += '\n'+key.replace('_', ' ').capitalize()+': '+str(self.user_data[key])
+        self.general_info += '\n\n\n\n'
+
         if self.debug_mode:
             WriteDebugLog('General info set', userid=self.user_id)
         #Common log to file
