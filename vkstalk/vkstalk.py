@@ -56,6 +56,7 @@ class VKStalk:
         self.error_logger_is_built = False
         self.debug_mode = debug_mode
         self.current_path = '/'.join(__file__.split('/')[:-1])
+        self.secondary_data_keys_list = []
 
         #pretify program version output
         self.version = '\n' + '='*((42-len(self.version))/2) + self.version + '='*((42-len(self.version))/2) + '\n\n'
@@ -79,31 +80,12 @@ class VKStalk:
             WriteDebugLog('Preparing log', userid=self.user_id)
         #Save prev. log file
         self.last_log = self.log
-        # self.general_info = (
-        #                     'Log file created on' + time.strftime(' %d-%B-%Y at %H:%M:%S') +
-        #                     '\nUsername: '+ self.user_data['name'] +
-        #                     '\nStatus: ' + self.user_data['status'] + 
-        #                     '\nBirthday: ' + self.user_data['birthday'] + 
-        #                     '\nSkype: ' + self.user_data['skype'] + 
-        #                     '\nSite: ' + self.user_data['site'] + 
-        #                     '\nLast visit: ' + self.user_data['last_visit'] + 
-        #                     '\nTwitter: ' + self.user_data['twitter'] + 
-        #                     '\nInstagram: ' + self.user_data['instagram'] + 
-        #                     '\nFacebook: ' + self.user_data['facebook'] + 
-        #                     '\nPhone: ' + self.user_data['phone'] +
-        #                     '\nHometown: ' + self.user_data['hometown'] +
-        #                     '\nCurrent city: ' + self.user_data['current_city'] +
-        #                     '\nUniversity: ' + self.user_data['university'] +
-        #                     '\nPhoto: ' + self.user_data['photo'] +
-        #                     # '\nNumber of photos: ' + self.user_data['number_of_photos'] +
-        #                     # '\nNumber of posts: ' + self.user_data['number_of_posts'] +
-        #                     # '\nNumber of gifts: ' + self.user_data['number_of_gifts'] +
-        #                     # '\nNumber of friends: ' + self.user_data['number_of_friends'] +
-        #                     '\n\n\n\n'
-        #                     )
+        #Assume log will be written
+        self.logs_counter += 1
+        #General info. Written once on file creation.
         self.general_info = 'Log file created on' + time.strftime(' %d-%B-%Y at %H:%M:%S')
         for key in self.user_data.keys():
-            self.general_info += '\n'+key.replace('_', ' ').capitalize()+': '+str(self.user_data[key])
+            self.general_info += '\n'+key.replace('_', ' ').capitalize()+': '+unicode(self.user_data[key])
         self.general_info += '\n\n\n\n'
 
         if self.debug_mode:
@@ -114,9 +96,45 @@ class VKStalk:
                     self.user_data['last_visit'] +
                     '\nStatus: ' + self.user_data['status'] + '\n\n'
                     )
+        #Looking for changes in secondary data
+        try:
+            if self.logs_counter > 1:
+                secondary_data_changes = 0
+                for key in self.secondary_data_keys_list:
+                    if key in self.user_data.keys() and key in self.prev_user_data.keys():
+                        if self.user_data[key] != self.prev_user_data[key]:
+                            secondary_data_changes += 1
+                            self.log = self.log.rstrip()+'\n'+key.replace('_', ' ').capitalize()+': '+str(self.prev_user_data[key])+' => '+str(self.user_data[key])+'\n'
+                self.log += '\n'
+        except Exception as e:
+            self.HandleError(
+                        step='Adding extra info to log.',
+                        exception_msg=e,
+                        dump_vars=True,
+                        console_msg='Error while adding extra info to the log.\n'+str(e)
+                        )
+            return False
         #Generating a timestamp and adding it to the log string
         self.log_time = datetime.strftime(datetime.now(),'>>>Date: %d-%m-%Y. Time: %H:%M:%S\n')
-        self.log = self.log_time + self.log
+        self.log = self.log_time + self.log.rstrip() + '\n\n'
+
+        #first log to file
+        filename = time.strftime('%Y.%m.%d') + '-' + self.user_data['name'] + '.log'
+        path = os.path.join(self.current_path, "Data","Logs",filename)
+        first_log_to_file = not os.path.exists(path)
+
+        if ((self.user_data['online']!=self.prev_user_data['online'])
+        or (self.user_data['mobile_version']!=self.prev_user_data['mobile_version'])
+        or (self.user_data['status']!=self.prev_user_data['status'])
+        or (self.user_data['name']!=self.prev_user_data['name'])
+        or (first_log_to_file)
+        or (secondary_data_changes>0)):
+            write_log = True # a log should be written. There is new data.
+        else:
+            #Assumption was wrong. The log wasn't written thus, counter decreased.
+            self.logs_counter -= 1
+            write_log = False # No need to write the log, there is no new data.
+
         #Prepare output to console
         self.console_log = (
                     self.version + 'Launched on ' + self.birth +
@@ -126,20 +144,13 @@ class VKStalk:
                     '\n\n' + '='*14 + '| LATEST LOG |' + '='*14 + '\n\n' + self.log +
                     '='*14 + '| LAST ERROR |' + '='*14 + '\n\n' + self.last_error
                     )
-
-        #first log to file
-        filename = time.strftime('%Y.%m.%d') + '-' + self.user_data['name'] + '.log'
-        path = os.path.join(self.current_path, "Data/Logs/"+filename)
-
-        if not os.path.exists(path):#first log to file
+        if first_log_to_file:#first log to file
             self.log = self.general_info + self.log
 
         if self.debug_mode:
-            WriteDebugLog('Set log', userid=self.user_id)
+            WriteDebugLog('Log preparation finished', userid=self.user_id)
 
-        if self.debug_mode:
-            WriteDebugLog('Set console log', userid=self.user_id)
-            WriteDebugLog('Log preparing finished', userid=self.user_id)
+        return write_log
 
     def CookSoup(self):
         # Return the soup obtained from scrapping the page or False if any
@@ -234,6 +245,7 @@ class VKStalk:
         user_data['hometown'] = '_not_found'
         user_data['current_city'] = '_not_found'
         #other secondary data entries are added during runtime. These depend on the profile of the user.
+        self.secondary_data_keys_list = []
         
         if self.debug_mode:
             WriteDebugLog('Done', userid=self.user_id)
@@ -379,6 +391,7 @@ class VKStalk:
                 for data_name in secondary_data_names_list:
                     if data_name in item:
                         user_data[data_name.lower()] = item.split(':')[-1]
+                    self.secondary_data_keys_list.append(data_name.lower())
 
             current_step = "Getting extra data (e.g. number of photos/communities)"
             extra_data = self.soup.find(class_='profile_menu')
@@ -399,7 +412,8 @@ class VKStalk:
                         value = part
                     elif not part.isdigit():
                         key += part+'_'
-                key.rstrip()
+                key = key.replace('_',' ').rstrip().replace(' ','_')
+                self.secondary_data_keys_list.append(key)
                 user_data[key] = value
 
 
@@ -416,16 +430,13 @@ class VKStalk:
     def ShowWriteInfo(self):
         #if there's new user data,  a new status or online changed from False to True or True to False
         #write the new log to file
-        self.PrepareLog()
-        if ((self.user_data['online']!=self.prev_user_data['online'])
-        or (self.user_data['status']!=self.prev_user_data['status'])
-        or (self.user_data['name']!=self.prev_user_data['name'])):
+        filename = time.strftime('%Y.%m.%d') + '-' + self.user_data['name'] + '.log'
+        path = os.path.join(self.current_path, "Data","Logs"+filename)
+        write_log = self.PrepareLog()
+        if write_log:
             if self.debug_mode:
                 WriteDebugLog('Writing log to file', userid=self.user_id)
             try:
-                #increase logs counter
-                self.logs_counter += 1
-                filename = time.strftime('%Y.%m.%d') + '-' + self.user_data['name'] + '.log'
                 self.data_logger_is_built = WriteDataLog(self.log, filename, self.data_logger_is_built and self.user_data['name'] in filename)
             except Exception as e:
                 self.HandleError(
@@ -440,6 +451,7 @@ class VKStalk:
             #Save previous data
             #update last user_data to the current one
             self.prev_user_data = self.user_data
+
         try:
             if self.debug_mode:
                 WriteDebugLog('Output to console', userid=self.user_id)
