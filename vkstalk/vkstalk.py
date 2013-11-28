@@ -50,7 +50,7 @@ class VKStalk:
         self.last_error = 'No errors yet =)'
         self.error_counter = 0
         self.logs_counter = 0
-        self.version = "| VKStalk ver. 4.0.0 BETA 3 |"
+        self.version = "| VKStalk ver. 4.0.0 BETA 4 |"
         self.birth = datetime.now().strftime("%d-%B-%Y at %H:%M")
         self.data_logger_is_built = False
         self.error_logger_is_built = False
@@ -64,10 +64,13 @@ class VKStalk:
         CreateLogFolders()
         if self.debug_mode:
             WriteDebugLog('Log folders created', is_setup=False, userid=self.user_id)
-        #Clear screen
-        os.system( [ 'clear', 'cls' ][ os.name == 'nt' ] )
+        self.ClearScreen()
         #Print greeting message
         ConsoleLog('VKStalk successfully launched! Have a tea and analyze the results ;)', False)
+
+    def ClearScreen(self):
+        #Clear screen
+        os.system( [ 'clear', 'cls' ][ os.name == 'nt' ] )
 
     def NormalizeUnicode(self, user_data):
         # Normalize and encode to ascii_letters
@@ -157,7 +160,8 @@ class VKStalk:
         # error occured while connecting
 
         # Target URLs for VK and Mobile VK
-        url='http://vk.com/'
+        self.raw_url = 'http://vk.com'
+        self.url = self.raw_url + '/'
         # url_mobile='http://m.vk.com/'
 
         #generate user specific URLs
@@ -165,10 +169,10 @@ class VKStalk:
             WriteDebugLog('Generating URLs', userid=self.user_id)
 
         if self.user_id.isdigit():
-            url += 'id' + self.user_id
+            self.url += 'id' + self.user_id
             # url_mobile += 'id' + self.user_id
         else:
-            url +=  self.user_id
+            self.url +=  self.user_id
             # url_mobile += self.user_id
 
         #requesting the page
@@ -176,7 +180,7 @@ class VKStalk:
             WriteDebugLog('Fetching HTML page', userid=self.user_id)
         
         try:
-            cHandle = urllib2.urlopen(url, timeout=20)
+            cHandle = urllib2.urlopen(self.url, timeout=20)
             self.html = cHandle.read()
             cHandle.close()
         except Exception as e:
@@ -209,18 +213,33 @@ class VKStalk:
         # nr. of gifts. Some more data is much less relevant.
 
         #Check if the profile is not hidden
-        if self.debug_mode:
-            WriteDebugLog('Checking if the profile is not hidden', userid=self.user_id)
-        if self.soup.find('div',{'class':'service_msg_null'}):
-            self.HandleError(
-                        step='Verifying if profile is public.',
-                        exception_msg='PRIVATE profile. Access forbidden.',
-                        debug_msg='It is a PRIVATE profile. Can be viewed only by logged in users.'
-                        )
-            exit("Private profile. Access forbidden")
-        else:
+        max_retries = 10
+        for retry_counter in range(max_retries):
             if self.debug_mode:
-                WriteDebugLog('Profile PUBLIC. OK!', userid=self.user_id)
+                WriteDebugLog('Checking if the profile is not hidden. Attempt ('+str(retry_counter+1)+' of '+str(max_retries)+')', userid=self.user_id)
+            if self.soup.find('div',{'class':'service_msg_null'}):
+                self.ClearScreen()
+                self.HandleError(
+                    step='Verifying if profile is public. Attempt ('+str(retry_counter+1)+' of '+str(max_retries)+')',
+                    exception_msg='PRIVATE profile. Access forbidden.',
+                    debug_msg='It is a PRIVATE profile. Can be viewed only by logged in users. Attempt ('+str(retry_counter+1)+' of '+str(max_retries)+')',
+                    sleep=15,
+                    console_msg=(
+                        'PRIVATE profile. Can be viewed only by logged in users.\nAttempt ('
+                        +str(retry_counter+1)+' of '+str(max_retries)+').\nRetry in 15 seconds...\n'
+                        )
+                    )
+                ConsoleLog('Fetching user data...')
+                self.CookSoup()
+                profile_private = True
+            else:
+                if self.debug_mode:
+                    WriteDebugLog('Profile PUBLIC. OK!', userid=self.user_id)
+                profile_private = False
+                break
+        if profile_private:
+            exit("Private profile. Access forbidden")
+
         
         if self.debug_mode:
             WriteDebugLog('Initializing user_data with default values', userid=self.user_id)
@@ -350,7 +369,7 @@ class VKStalk:
                             user_data['last_visit'] = 'last seen ' + date_time.strftime(last_seen[:last_seen.find('at')]+"at %H:%M")
                             if ('yesterday' in last_seen) and (date_time.hour+hours_delta < 24):
                                 user_data['last_visit'] = user_data['last_visit'].replace('yesterday','today')
-                            elif ('today' in last_seen) and (date_time.hour+hours_delta < datetime.now().hour):
+                            elif ('today' in last_seen) and (date_time.hour+hours_delta >= 24):
                                 user_data['last_visit'] = user_data['last_visit'].replace('today','yesterday')
                         except Exception as e:
                             self.HandleError(step="Parsing time in last_seen", exception_msg=e, dump_vars=True)
@@ -374,7 +393,6 @@ class VKStalk:
             return False
 
         #Secondary data fectching
-        user_data['photo'] = '_not_found'
         try:
             current_step = "Fetching secondary data"
             secondary_data_names_list = ['Skype', 'Twitter', 'Instagram', 'University', 'Birthday', 'Facebook', 'Website', 'Phone', 'Hometown', 'Current city']
@@ -415,6 +433,33 @@ class VKStalk:
                 key = key.replace('_',' ').rstrip().replace(' ','_')
                 self.secondary_data_keys_list.append(key)
                 user_data[key] = value
+
+                current_step = "Getting number of wall posts"
+                all_slim_headers = self.soup.findAll(class_='slim_header')
+                if len(all_slim_headers)>0:
+                    for item in all_slim_headers:
+                        if 'post' in item.text:
+                            number_of_wallposts = item.text.split()[0]
+                            number_of_wallposts = number_of_wallposts.encode('ascii','ignore')
+                            #clear number from punctuation
+                            table = string.maketrans("","")
+                            number_of_wallposts = number_of_wallposts.translate(table, string.punctuation)
+                            if number_of_wallposts.isdigit():
+                                user_data['number_of_wallposts'] = number_of_wallposts
+                            else:
+                                break
+
+                current_step = "Getting link to profile photo."
+                short_profile = self.soup.find(id="mcont")
+                if short_profile is not None:
+                    short_profile = short_profile.find(class_='owner_panel')
+                    if short_profile is not None:
+                        photo_tag = short_profile.find('a')
+                        if photo_tag is not None:
+                            photo_link = photo_tag.get('href')
+                            if photo_link is not None:
+                                user_data['photo'] = self.raw_url+photo_link
+
 
 
         except Exception as e:
@@ -503,9 +548,7 @@ class VKStalk:
         if self.GetUserData() == False:
             return False
         
-        #Clear screen
-        os.system( [ 'clear', 'cls' ][ os.name == 'nt' ] )
-
+        self.ClearScreen()
         if not self.ShowWriteInfo():
             return False
 
@@ -520,7 +563,6 @@ class VKStalk:
                 break
             time.sleep(self.time_step)
         ##RESTART APP###
-        #Clear screen
-        os.system( [ 'clear', 'cls' ][ os.name == 'nt' ] )
+        self.ClearScreen()
         #Restart main cycle
         self.Work()
