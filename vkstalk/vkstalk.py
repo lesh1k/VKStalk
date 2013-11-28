@@ -116,7 +116,7 @@ class VKStalk:
                         dump_vars=True,
                         console_msg='Error while adding extra info to the log.\n'+str(e)
                         )
-            return False
+            pass
         #Generating a timestamp and adding it to the log string
         self.log_time = datetime.strftime(datetime.now(),'>>>Date: %d-%m-%Y. Time: %H:%M:%S\n')
         self.log = self.log_time + self.log.rstrip() + '\n\n'
@@ -152,6 +152,9 @@ class VKStalk:
 
         if self.debug_mode:
             WriteDebugLog('Log preparation finished', userid=self.user_id)
+        #Save previous data
+        #update last user_data to the current one
+        self.prev_user_data = self.user_data
 
         return write_log
 
@@ -367,7 +370,7 @@ class VKStalk:
                             date_time = date_time.replace(year=datetime.now().year)
                             date_time = date_time - time_delta
                             user_data['last_visit'] = 'last seen ' + date_time.strftime(last_seen[:last_seen.find('at')]+"at %H:%M")
-                            if ('yesterday' in last_seen) and (date_time.hour+hours_delta < 24):
+                            if ('yesterday' in last_seen) and (datetime.now().hour-hours_delta >= 0):
                                 user_data['last_visit'] = user_data['last_visit'].replace('yesterday','today')
                             elif ('today' in last_seen) and (date_time.hour+hours_delta >= 24):
                                 user_data['last_visit'] = user_data['last_visit'].replace('today','yesterday')
@@ -434,33 +437,33 @@ class VKStalk:
                 self.secondary_data_keys_list.append(key)
                 user_data[key] = value
 
-                current_step = "Getting number of wall posts"
-                all_slim_headers = self.soup.findAll(class_='slim_header')
-                if len(all_slim_headers)>0:
-                    for item in all_slim_headers:
-                        if 'post' in item.text:
-                            number_of_wallposts = item.text.split()[0]
-                            number_of_wallposts = number_of_wallposts.encode('ascii','ignore')
-                            #clear number from punctuation
-                            table = string.maketrans("","")
-                            number_of_wallposts = number_of_wallposts.translate(table, string.punctuation)
-                            if number_of_wallposts.isdigit():
-                                user_data['number_of_wallposts'] = number_of_wallposts
-                            else:
-                                break
+            current_step = "Getting number of wall posts"
+            all_slim_headers = self.soup.findAll(class_='slim_header')
+            if len(all_slim_headers)>0:
+                for item in all_slim_headers:
+                    if 'post' in item.text:
+                        number_of_wallposts = item.text.split()[0]
+                        number_of_wallposts = number_of_wallposts.encode('ascii','ignore')
+                        #clear number from punctuation
+                        table = string.maketrans("","")
+                        number_of_wallposts = number_of_wallposts.translate(table, string.punctuation)
+                        if number_of_wallposts.isdigit():
+                            user_data['number_of_wallposts'] = number_of_wallposts
+                            self.secondary_data_keys_list.append('number_of_wallposts')
+                        else:
+                            break
 
-                current_step = "Getting link to profile photo."
-                short_profile = self.soup.find(id="mcont")
+            current_step = "Getting link to profile photo."
+            short_profile = self.soup.find(id="mcont")
+            if short_profile is not None:
+                short_profile = short_profile.find(class_='owner_panel')
                 if short_profile is not None:
-                    short_profile = short_profile.find(class_='owner_panel')
-                    if short_profile is not None:
-                        photo_tag = short_profile.find('a')
-                        if photo_tag is not None:
-                            photo_link = photo_tag.get('href')
-                            if photo_link is not None:
-                                user_data['photo'] = self.raw_url+photo_link
-
-
+                    photo_tag = short_profile.find('a')
+                    if photo_tag is not None:
+                        photo_link = photo_tag.get('href')
+                        if photo_link is not None:
+                            user_data['photo'] = self.raw_url+photo_link
+                            self.secondary_data_keys_list.append('photo')
 
         except Exception as e:
             self.HandleError(step=current_step, exception_msg=e, dump_vars=True, debug_msg=current_step)
@@ -493,9 +496,6 @@ class VKStalk:
                         debug_msg='Restarting request.'
                         )
                 return False
-            #Save previous data
-            #update last user_data to the current one
-            self.prev_user_data = self.user_data
 
         try:
             if self.debug_mode:
