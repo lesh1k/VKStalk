@@ -370,8 +370,10 @@ class VKStalk:
                             date_time = date_time.replace(year=datetime.now().year)
                             date_time = date_time - time_delta
                             user_data['last_visit'] = 'last seen ' + date_time.strftime(last_seen[:last_seen.find('at')]+"at %H:%M")
-                            if ('yesterday' in last_seen) and (datetime.now().hour-hours_delta >= 0):
+                            if ('yesterday' in last_seen) and (datetime.now().hour-hours_delta >= 0) and (date_time.hour+hours_delta < 24):
                                 user_data['last_visit'] = user_data['last_visit'].replace('yesterday','today')
+                            elif ('yesterday' in last_seen) and (datetime.now().hour-hours_delta >= 0):
+                                user_data['last_visit'] = user_data['last_visit'].replace('yesterday','two days ago')
                             elif ('today' in last_seen) and (date_time.hour+hours_delta >= 24):
                                 user_data['last_visit'] = user_data['last_visit'].replace('today','yesterday')
                         except Exception as e:
