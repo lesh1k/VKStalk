@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 import unicodedata
 from pprint import pprint
 from logger import CreateLogFolders, WriteDataLog, WriteErrorLog, WriteDebugLog, ConsoleLog
-
+import smtplib#for mail sending
 
 class VKStalk:
 #Class description
@@ -40,7 +40,7 @@ class VKStalk:
 # def Work(self):
 #     Starts an infinite loop (while True) calling self.SingleRequest()
 
-    def __init__(self, user_id, debug_mode=False):
+    def __init__(self, user_id, debug_mode=False, email_notifications=False, email=''):
         self.user_id = user_id
         self.user_data = {}
         self.prev_user_data = {'online':'_not_found', 'status':'_not_found_first_start'}
@@ -56,7 +56,13 @@ class VKStalk:
         self.error_logger_is_built = False
         self.debug_mode = debug_mode
         self.current_path = '/'.join(__file__.split('/')[:-1])
+        self.filename = ''
         self.secondary_data_keys_list = []
+        self.email_notifications = email_notifications
+        self.mail_recipient = email
+        self.mail_notification_hours = [9,21]
+        self.last_mail_time = -1
+
 
         #pretify program version output
         self.version = '\n' + '='*((42-len(self.version))/2) + self.version + '='*((42-len(self.version))/2) + '\n\n'
@@ -125,6 +131,7 @@ class VKStalk:
         filename = time.strftime('%Y.%m.%d') + '-' + self.user_data['name'] + '.log'
         path = os.path.join(self.current_path, "Data","Logs",filename)
         first_log_to_file = not os.path.exists(path)
+        self.filename = path
 
         if ((self.user_data['online']!=self.prev_user_data['online'])
         or (self.user_data['mobile_version']!=self.prev_user_data['mobile_version'])
@@ -155,6 +162,27 @@ class VKStalk:
         #Save previous data
         #update last user_data to the current one
         self.prev_user_data = self.user_data
+
+        try:
+            current_step = 'Sending email.'
+            if (self.email_notifications
+            and (datetime.now().hour in self.mail_notification_hours)
+            and (datetime.now().hour != self.last_mail_time)):
+                ConsoleLog('Sending email...')
+                if self.SendMail():
+                    ConsoleLog('Mail sent!')
+                    self.last_mail_time = datetime.now().hour
+                else:
+                    ConsoleLog('Mail NOT sent!')
+                self.ClearScreen()
+        except Exception as e:
+            self.HandleError(
+                        step=current_step,
+                        exception_msg=e,
+                        dump_vars=True,
+                        console_msg='Could not send email.\n'+str(e)
+                        )
+            pass
 
         return write_log
 
@@ -539,6 +567,43 @@ class VKStalk:
             time.sleep(sleep)
         if debug_msg and self.debug_mode:
             WriteDebugLog(debug_msg, userid=self.user_id)
+
+    ##Mail sending
+    def SendMail(self):
+        TEXT = ''
+        
+        # Add number of logs and error to message
+        TEXT += 'Logs written: '+str(self.logs_counter)
+        TEXT += '\nErrors occured: '+str(self.error_counter)
+        TEXT += '\nLast error: '+str(self.last_error)+'\n\n\n'
+        # Specifying the from and to addresses
+        fromaddr = 'vkstalk@gmail.com'
+        if not self.mail_recipient:
+            return False
+        toaddrs  = self.mail_recipient
+         
+        # Writing the message (this message will appear in the email)
+        SUBJECT = 'VKStalk report. Name: '+self.user_data['name']+'. ID: '+self.user_id
+        if self.filename:
+            file_handle = open(self.filename,'r')
+            TEXT = TEXT + file_handle.read()
+            file_handle.close()
+        message = 'Subject: %s\n\n%s' % (SUBJECT, TEXT)
+         
+        # Gmail Login
+         
+        mail_username = 'stalkvk'
+        mail_password = 'sG567.mV11'
+         
+        # Sending the mail  
+         
+        server = smtplib.SMTP('smtp.gmail.com:587')
+        server.starttls()
+        server.login(mail_username,mail_password)
+        server.sendmail(fromaddr, toaddrs, message)
+        server.quit()
+        return True
+
     #########################################################################################
 
     def SingleRequest(self):
