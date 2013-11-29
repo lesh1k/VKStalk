@@ -168,13 +168,8 @@ class VKStalk:
             if (self.email_notifications
             and (datetime.now().hour in self.mail_notification_hours)
             and (datetime.now().hour != self.last_mail_time)):
-                ConsoleLog('Sending email...')
                 if self.SendMail():
-                    ConsoleLog('Mail sent!')
                     self.last_mail_time = datetime.now().hour
-                else:
-                    ConsoleLog('Mail NOT sent!')
-                self.ClearScreen()
         except Exception as e:
             self.HandleError(
                         step=current_step,
@@ -243,20 +238,22 @@ class VKStalk:
         # online friends, some of the friends who are online, nr. of friends
         # nr. of gifts. Some more data is much less relevant.
 
-        #Check if the profile is not hidden
+        #Check if the profile is not hidden. Page was deleted or does not exit.
         max_retries = 10
         for retry_counter in range(max_retries):
             if self.debug_mode:
-                WriteDebugLog('Checking if the profile is not hidden. Attempt ('+str(retry_counter+1)+' of '+str(max_retries)+')', userid=self.user_id)
-            if self.soup.find('div',{'class':'service_msg_null'}):
+                WriteDebugLog('Checking if the profile exists and is accessible. Attempt ('+str(retry_counter+1)+' of '+str(max_retries)+')', userid=self.user_id)
+            if ((self.soup.find('div',{'class':'service_msg_null'}))
+            or ('This user deleted their page. Information unavailable.' in self.soup.text)
+            or ('This page is either deleted or has not been created yet.' in self.soup.text)):
                 self.ClearScreen()
                 self.HandleError(
-                    step='Verifying if profile is public. Attempt ('+str(retry_counter+1)+' of '+str(max_retries)+')',
-                    exception_msg='PRIVATE profile. Access forbidden.',
-                    debug_msg='It is a PRIVATE profile. Can be viewed only by logged in users. Attempt ('+str(retry_counter+1)+' of '+str(max_retries)+')',
+                    step='Verifying if profile is accessible. Attempt ('+str(retry_counter+1)+' of '+str(max_retries)+')',
+                    exception_msg='Access forbidden. Profile PRIVATE or page does not exist.',
+                    debug_msg='Access forbidden. Profile PRIVATE or page does not exist. Attempt ('+str(retry_counter+1)+' of '+str(max_retries)+')',
                     sleep=15,
                     console_msg=(
-                        'PRIVATE profile. Can be viewed only by logged in users.\nAttempt ('
+                        'Access forbidden. Profile PRIVATE or page does not exist.\nAttempt ('
                         +str(retry_counter+1)+' of '+str(max_retries)+').\nRetry in 15 seconds...\n'
                         )
                     )
@@ -269,6 +266,7 @@ class VKStalk:
                 profile_private = False
                 break
         if profile_private:
+            self.SendMail(mail_type='error', msg="Execution terminated! Private profile. Access forbidden.")
             exit("Private profile. Access forbidden")
 
         
@@ -569,26 +567,38 @@ class VKStalk:
             WriteDebugLog(debug_msg, userid=self.user_id)
 
     ##Mail sending
-    def SendMail(self):
+    def SendMail(self, mail_type='daily', msg='default_message'):
+        ConsoleLog('Sending email...')
+
         TEXT = ''
-        
-        # Add number of logs and error to message
-        TEXT += 'Logs written: '+str(self.logs_counter)
-        TEXT += '\nErrors occured: '+str(self.error_counter)
-        TEXT += '\nLast error: '+str(self.last_error)+'\n\n\n'
+        SUBJECT = ''
+        if mail_type == 'daily':
+            # Add number of logs and error to message
+            TEXT += 'Logs written: '+str(self.logs_counter)
+            TEXT += '\nErrors occured: '+str(self.error_counter)
+            TEXT += '\nLast error: '+str(self.last_error)+'\n\n\n'
+            # Writing the message (this message will appear in the email)
+            SUBJECT = 'VKStalk report. Name: '+self.user_data['name']+'. ID: '+self.user_id
+            if self.filename:
+                file_handle = open(self.filename,'r')
+                TEXT = TEXT + file_handle.read()
+                file_handle.close()
+        elif mail_type == 'error':
+            # Writing the message (this message will appear in the email)
+            SUBJECT = 'VKStalk ERROR. User ID: '+self.user_id
+            TEXT += msg
+
+        #Constructing the message
+        message = 'Subject: %s\n\n%s' % (SUBJECT, TEXT)    
         # Specifying the from and to addresses
         fromaddr = 'vkstalk@gmail.com'
         if not self.mail_recipient:
+            ConsoleLog('Mail NOT sent!')
+            self.ClearScreen()
             return False
         toaddrs  = self.mail_recipient
          
-        # Writing the message (this message will appear in the email)
-        SUBJECT = 'VKStalk report. Name: '+self.user_data['name']+'. ID: '+self.user_id
-        if self.filename:
-            file_handle = open(self.filename,'r')
-            TEXT = TEXT + file_handle.read()
-            file_handle.close()
-        message = 'Subject: %s\n\n%s' % (SUBJECT, TEXT)
+        
          
         # Gmail Login
          
@@ -602,6 +612,7 @@ class VKStalk:
         server.login(mail_username,mail_password)
         server.sendmail(fromaddr, toaddrs, message)
         server.quit()
+        ConsoleLog('Mail sent!')
         return True
 
     #########################################################################################
