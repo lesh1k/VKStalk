@@ -2,9 +2,9 @@ from vkstalk import VKStalk
 import sys
 
 if __name__ == "__main__":
+	keys = []
+	values = []
 	if (len(sys.argv)%2 == 1) and (len(sys.argv)>1):
-		keys = []
-		values = []
 		for i in range(1,len(sys.argv)):#because sys.argv[0] is the filename (i.e. main.py)
 			if i%2 == 0:
 				values.append(sys.argv[i])
@@ -17,7 +17,7 @@ if __name__ == "__main__":
 	#get userID from system args or input from kbd if first is empty
 	user_ID = passed_args['id'] if ('id' in keys) else raw_input('User ID:') #e.g."83029348" or "alexei.dvorac"
 	#see if there is need in email notifications
-	email_notifications = bool(int(passed_args['notifications'])) if ('notifications' in keys) else False
+	email_notifications = bool(int(passed_args['notifications'])) if ('notifications' in keys) else bool(int(raw_input('Enable email notifications? (0/1):')))
 	#ask for email
 	if email_notifications:
 		email = passed_args['email'] if ('email' in keys) else raw_input('Email:') #e.g."83029348" or "alexei.dvorac"
