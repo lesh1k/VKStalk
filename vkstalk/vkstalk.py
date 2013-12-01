@@ -50,7 +50,7 @@ class VKStalk:
         self.last_error = 'No errors yet =)'
         self.error_counter = 0
         self.logs_counter = 0
-        self.version = "| VKStalk ver. 4.0.0 BETA 4 |"
+        self.version = "| VKStalk ver. 4.0.0 RC1 |"
         self.birth = datetime.now().strftime("%d-%B-%Y at %H:%M")
         self.data_logger_is_built = False
         self.error_logger_is_built = False

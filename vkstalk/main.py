@@ -1,5 +1,6 @@
 from vkstalk import VKStalk
 import sys
+import re
 
 if __name__ == "__main__":
 	keys = []
@@ -20,7 +21,13 @@ if __name__ == "__main__":
 	email_notifications = bool(int(passed_args['notifications'])) if ('notifications' in keys) else bool(int(raw_input('Enable email notifications? (0/1):')))
 	#ask for email
 	if email_notifications:
-		email = passed_args['email'] if ('email' in keys) else raw_input('Email:') #e.g."83029348" or "alexei.dvorac"
+		email = passed_args['email'] if ('email' in keys) else raw_input('Email:') #e.g."45156687" or "alexei.dvorac"
+		email_valid = False
+		while not email_valid:
+			email_valid = False if not re.match(r"[^@]+@[^@]+\.[^@]+", email) else True
+			if not email_valid:
+				print 'Mistyped mail. Try again...'
+				email = raw_input('Email:') #e.g."45156687" or "alexei.dvorac"
 
 	vk_object = VKStalk(user_ID, debug_mode = enable_debug, email_notifications=email_notifications, email=email)
 	vk_object.Work()
