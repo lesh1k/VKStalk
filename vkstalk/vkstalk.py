@@ -65,7 +65,7 @@ class VKStalk:
         self.summary_notification_days = [6]
         self.summary_notification_hours = [9]
         self.last_summary_mail_day = -1
-        max_files_for_summary = 10
+        self.max_files_for_summary = 10
 
 
         #pretify program version output
@@ -190,7 +190,7 @@ class VKStalk:
             if (self.email_notifications
             and (datetime.now().hour in self.summary_notification_hours)
             and (datetime.now().day != self.last_summary_mail_day)):
-                if self.SendMail(mail_type='summary', filename=Summarize(user_name=self.user_data['name'], max_files=max_files_for_summary)):
+                if self.SendMail(mail_type='summary', filename=Summarize(user_name=self.user_data['name'], max_files=self.max_files_for_summary)):
                     self.last_summary_mail_day = datetime.now().day
         except Exception as e:
             self.HandleError(
@@ -201,6 +201,7 @@ class VKStalk:
                         )
             pass
 
+        self.ClearScreen()
         return write_log
 
     def CookSoup(self):
