@@ -2,6 +2,9 @@
 import logging
 import time #used for time.sleep()
 import os #to check if a file exists
+import string
+import glob
+import codecs
 
 def SetupLogger(logger_name, log_file='empty.log', log_format=None, log_date_format=None,
                 log_file_mode='a', level=logging.INFO,
@@ -29,6 +32,7 @@ def CreateLogFolders():
     error_folder = os.path.join(current_path, "Data", "Errors")
     logs_folder = os.path.join(current_path, "Data", "Logs")
     debug_folder = os.path.join(current_path, "Data", "Debug")
+    summaries_folder = os.path.join(current_path, "Data", "Summaries")
 
     try:
         if not os.path.exists(data_folder):
@@ -39,6 +43,8 @@ def CreateLogFolders():
             os.mkdir(error_folder)
         if not os.path.exists(debug_folder):
             os.mkdir(debug_folder)
+        if not os.path.exists(summaries_folder):
+            os.mkdir(summaries_folder)
     except:
         #Here be the Error logging line#
         return False
@@ -138,3 +144,69 @@ def ConsoleLog(message, is_setup=True):
         return False
     
     return True
+
+def Summarize(user_name='', log_folder='Data/Logs/', extension=".log", max_files=-1):
+    if not user_name:
+        return False
+
+    #save current working directory, so that we return here later
+    initial_dir = os.getcwd()
+    #get to logs folder
+    os.chdir(log_folder)
+    #get all log files list
+    user_last_name = user_name.split()[-1]
+    FILE_LIST = glob.glob('*'+user_last_name+extension)
+    #shorten list
+    if max_files!=-1 and len(FILE_LIST)>max_files:
+        FILE_LIST = FILE_LIST[-max_files:]
+    ALL_STATUSES = []
+    UNIQUE_STATUSES = []
+    UGLY_RESULT = []
+    RESULT = {}
+    DATA = {}
+    #get the list of statuses per file. [decoded]
+    for fileName in FILE_LIST:
+        fHandle = open(fileName, 'r')
+        fData = fHandle.readlines()
+        fHandle.close()
+        statusesList = []
+
+        for line in fData:
+            if 'Status:' in line:
+                decodedString = codecs.decode(line.replace('Status: ', ''),'utf8')
+                decodedString = decodedString.rstrip()
+                statusesList.append(decodedString)
+                ALL_STATUSES.append(decodedString)
+
+        DATA[fileName.split('-I')[0]] = statusesList
+
+    #Create the list of unique statuses
+    UNIQUE_STATUSES = list(set(ALL_STATUSES))
+
+    #Generate the list of tuples (nr_repetitions, status)
+    for status in UNIQUE_STATUSES:
+        UGLY_RESULT.append((ALL_STATUSES.count(status), status))
+
+    #Sort the result descendingly depending on nr. of occurences
+    UGLY_RESULT.sort()
+    UGLY_RESULT.reverse()
+
+    #Create a beautiful result
+    for i in range(len(UGLY_RESULT)):
+        RESULT[i+1] = UGLY_RESULT[i]
+
+    #get to initial folder
+    os.chdir(initial_dir)
+    #write result to file
+    current_path = '/'.join(__file__.split('/')[:-1])
+    filename = 'SUMMARY - ' + user_name + time.strftime(' - %Y.%m.%d') + '.log'
+    path = os.path.join(current_path, "Data", "Summaries")
+    if not os.path.exists(path):
+        return False
+    path = os.path.join(current_path, "Data", "Summaries", filename)
+    fHandle = open(path, 'w')
+    for key in RESULT.keys():
+        fHandle.write("%6d. %s \t  [x%d]\n" %(key, codecs.encode(string.ljust(RESULT[key][1],150), 'utf8'), RESULT[key][0]) )
+    fHandle.close()
+
+    return path

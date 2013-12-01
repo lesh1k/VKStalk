@@ -9,7 +9,7 @@ import string
 from datetime import datetime, timedelta
 import unicodedata
 from pprint import pprint
-from logger import CreateLogFolders, WriteDataLog, WriteErrorLog, WriteDebugLog, ConsoleLog
+from logger import CreateLogFolders, WriteDataLog, WriteErrorLog, WriteDebugLog, ConsoleLog, Summarize
 import smtplib#for mail sending
 
 class VKStalk:
@@ -62,6 +62,10 @@ class VKStalk:
         self.mail_recipient = email
         self.mail_notification_hours = [9,21]
         self.last_mail_time = -1
+        self.summary_notification_days = [6]
+        self.summary_notification_hours = [9]
+        self.last_summary_mail_day = -1
+        max_files_for_summary = 10
 
 
         #pretify program version output
@@ -163,6 +167,7 @@ class VKStalk:
         #update last user_data to the current one
         self.prev_user_data = self.user_data
 
+        #Send email if the time has come =)
         try:
             current_step = 'Sending email.'
             if (self.email_notifications
@@ -176,6 +181,23 @@ class VKStalk:
                         exception_msg=e,
                         dump_vars=True,
                         console_msg='Could not send email.\n'+str(e)
+                        )
+            pass
+
+        #Send summary email if the time has come =)
+        try:
+            current_step = 'Preparing a summary.'
+            if (self.email_notifications
+            and (datetime.now().hour in self.summary_notification_hours)
+            and (datetime.now().day != self.last_summary_mail_day)):
+                if self.SendMail(mail_type='summary', filename=Summarize(user_name=self.user_data['name'], max_files=max_files_for_summary)):
+                    self.last_summary_mail_day = datetime.now().day
+        except Exception as e:
+            self.HandleError(
+                        step=current_step,
+                        exception_msg=e,
+                        dump_vars=True,
+                        console_msg='Could not send summary email.\n'+str(e)
                         )
             pass
 
@@ -567,8 +589,8 @@ class VKStalk:
             WriteDebugLog(debug_msg, userid=self.user_id)
 
     ##Mail sending
-    def SendMail(self, mail_type='daily', msg='default_message'):
-        ConsoleLog('Sending email...')
+    def SendMail(self, mail_type='daily', msg='default_message', filename=''):
+        ConsoleLog('Sending '+mail_type+' email...')
 
         TEXT = ''
         SUBJECT = ''
@@ -587,6 +609,13 @@ class VKStalk:
             # Writing the message (this message will appear in the email)
             SUBJECT = 'VKStalk ERROR. User ID: '+self.user_id
             TEXT += msg
+        elif mail_type == 'summary':
+            # Writing the message (this message will appear in the email)
+            SUBJECT = 'VKStalk summary. Name: '+self.user_data['name']+'. ID: '+self.user_id
+            if self.filename:
+                file_handle = open(filename,'r')
+                TEXT = TEXT + file_handle.read()
+                file_handle.close()
 
         #Constructing the message
         message = 'Subject: %s\n\n%s' % (SUBJECT, TEXT)    
@@ -614,6 +643,12 @@ class VKStalk:
         server.quit()
         ConsoleLog('Mail sent!')
         return True
+
+    ##Summarizer
+    #Send summaries by email, every Sunday at 9AM
+    def Summarize(self):
+
+        pass
 
     #########################################################################################
 
