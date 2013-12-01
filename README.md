@@ -28,6 +28,7 @@ either python main.py,
 or python main.py id USER_ID notifications EMAIL_NOTIFICATIONS debug DEBUG 
 
 ======================================================================================
+
 OPTIONS
 
 id - user id you would like to stalk
