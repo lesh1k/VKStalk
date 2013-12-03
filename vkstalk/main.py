@@ -28,6 +28,8 @@ if __name__ == "__main__":
 			if not email_valid:
 				print 'Mistyped mail. Try again...'
 				email = raw_input('Email:') #e.g."45156687" or "alexei.dvorac"
+	else:
+		email = ''
 
 	vk_object = VKStalk(user_ID, debug_mode = enable_debug, email_notifications=email_notifications, email=email)
 	vk_object.Work()

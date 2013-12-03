@@ -62,7 +62,7 @@ class VKStalk:
         self.mail_recipient = email
         self.mail_notification_hours = [9,21]
         self.last_mail_time = -1
-        self.summary_notification_days = [6]
+        self.summary_notification_days = [0,1,2,3,4,5,6]
         self.summary_notification_hours = [9]
         self.last_summary_mail_day = -1
         self.max_files_for_summary = 10
@@ -189,6 +189,7 @@ class VKStalk:
             current_step = 'Preparing a summary.'
             if (self.email_notifications
             and (datetime.now().hour in self.summary_notification_hours)
+            and (datetime.now().day not in self.summary_notification_days)
             and (datetime.now().day != self.last_summary_mail_day)):
                 if self.SendMail(mail_type='summary', filename=Summarize(user_name=self.user_data['name'], max_files=self.max_files_for_summary)):
                     self.last_summary_mail_day = datetime.now().day
@@ -419,9 +420,9 @@ class VKStalk:
                             date_time = date_time.replace(year=datetime.now().year)
                             date_time = date_time - time_delta
                             user_data['last_visit'] = 'last seen ' + date_time.strftime(last_seen[:last_seen.find('at')]+"at %H:%M")
-                            if ('yesterday' in last_seen) and (datetime.now().hour-hours_delta >= 0) and (date_time.hour+hours_delta < 24):
+                            if ('yesterday' in last_seen) and (datetime.now().hour-hours_delta < 0):
                                 user_data['last_visit'] = user_data['last_visit'].replace('yesterday','today')
-                            elif ('yesterday' in last_seen) and (datetime.now().hour-hours_delta >= 0):
+                            elif ('yesterday' in last_seen) and (datetime.now().hour-hours_delta >= 0) and (date_time.hour+hours_delta >= 24):
                                 user_data['last_visit'] = user_data['last_visit'].replace('yesterday','two days ago')
                             elif ('today' in last_seen) and (date_time.hour+hours_delta >= 24):
                                 user_data['last_visit'] = user_data['last_visit'].replace('today','yesterday')

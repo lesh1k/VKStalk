@@ -150,8 +150,9 @@ def Summarize(user_name='', log_folder='Data/Logs/', extension=".log", max_files
         return False
 
     #save current working directory, so that we return here later
-    initial_dir = os.getcwd()
+    initial_dir = '/'.join(__file__.split('/')[:-1])
     #get to logs folder
+    log_folder = os.path.join(initial_dir, log_folder)
     os.chdir(log_folder)
     #get all log files list
     user_last_name = user_name.split()[-1]
@@ -198,12 +199,11 @@ def Summarize(user_name='', log_folder='Data/Logs/', extension=".log", max_files
     #get to initial folder
     os.chdir(initial_dir)
     #write result to file
-    current_path = '/'.join(__file__.split('/')[:-1])
     filename = 'SUMMARY - ' + user_name + time.strftime(' - %Y.%m.%d') + '.log'
-    path = os.path.join(current_path, "Data", "Summaries")
+    path = os.path.join(initial_dir, "Data", "Summaries")
     if not os.path.exists(path):
         return False
-    path = os.path.join(current_path, "Data", "Summaries", filename)
+    path = os.path.join(initial_dir, "Data", "Summaries", filename)
     fHandle = open(path, 'w')
     for key in RESULT.keys():
         fHandle.write("%6d. %s \t  [x%d]\n" %(key, codecs.encode(string.ljust(RESULT[key][1],150), 'utf8'), RESULT[key][0]) )
