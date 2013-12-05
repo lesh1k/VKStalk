@@ -63,7 +63,7 @@ class VKStalk:
         self.mail_notification_hours = [9,21]
         self.last_mail_time = -1
         self.summary_notification_days = [0,1,2,3,4,5,6]
-        self.summary_notification_hours = [9]
+        self.summary_notification_hours = [9,21]
         self.last_summary_mail_day = -1
         self.max_files_for_summary = 10
 
@@ -189,7 +189,7 @@ class VKStalk:
             current_step = 'Preparing a summary.'
             if (self.email_notifications
             and (datetime.now().hour in self.summary_notification_hours)
-            and (datetime.now().day not in self.summary_notification_days)
+            and (datetime.now().day in self.summary_notification_days)
             and (datetime.now().day != self.last_summary_mail_day)):
                 if self.SendMail(mail_type='summary', filename=Summarize(user_name=self.user_data['name'], max_files=self.max_files_for_summary)):
                     self.last_summary_mail_day = datetime.now().day
