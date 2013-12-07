@@ -63,7 +63,7 @@ class VKStalk:
         self.mail_notification_hours = [9,21]
         self.last_mail_time = -1
         self.summary_notification_days = [0,1,2,3,4,5,6]
-        self.summary_notification_hours = [9,21]
+        self.summary_notification_hours = [9,15]
         self.last_summary_mail_day = -1
         self.max_files_for_summary = 10
 
@@ -170,12 +170,20 @@ class VKStalk:
         #Send email if the time has come =)
         try:
             current_step = 'Sending email.'
+            if self.debug_mode:
+                WriteDebugLog(current_step, userid=self.user_id)
             if (self.email_notifications
             and (datetime.now().hour in self.mail_notification_hours)
             and (datetime.now().hour != self.last_mail_time)):
+                current_step = "Trying to send daily email."
+                if self.debug_mode:
+                    WriteDebugLog(current_step, userid=self.user_id)
                 if self.SendMail():
                     self.last_mail_time = datetime.now().hour
         except Exception as e:
+            current_step = "Could not send DAILY email."
+            if self.debug_mode:
+                WriteDebugLog(current_step, userid=self.user_id)
             self.HandleError(
                         step=current_step,
                         exception_msg=e,
@@ -187,13 +195,21 @@ class VKStalk:
         #Send summary email if the time has come =)
         try:
             current_step = 'Preparing a summary.'
+            if self.debug_mode:
+                WriteDebugLog(current_step, userid=self.user_id)
             if (self.email_notifications
             and (datetime.now().hour in self.summary_notification_hours)
-            and (datetime.now().day in self.summary_notification_days)
-            and (datetime.now().day != self.last_summary_mail_day)):
+            and (time.localtime().tm_wday in self.summary_notification_days)
+            and (time.localtime().tm_wday != self.last_summary_mail_day)):
+                current_step = "Trying to send summary mail."
+                if self.debug_mode:
+                    WriteDebugLog(current_step, userid=self.user_id)
                 if self.SendMail(mail_type='summary', filename=Summarize(user_name=self.user_data['name'], max_files=self.max_files_for_summary)):
-                    self.last_summary_mail_day = datetime.now().day
+                    self.last_summary_mail_day = time.localtime().tm_wday
         except Exception as e:
+            current_step = "Could not send SUMMARY email."
+            if self.debug_mode:
+                WriteDebugLog(current_step, userid=self.user_id)
             self.HandleError(
                         step=current_step,
                         exception_msg=e,
