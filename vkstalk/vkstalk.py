@@ -50,7 +50,7 @@ class VKStalk:
         self.last_error = 'No errors yet =)'
         self.error_counter = 0
         self.logs_counter = 0
-        self.version = "| VKStalk ver. 4.0.0 RC1 |"
+        self.version = "| VKStalk ver. 4.0.0 |"
         self.birth = datetime.now().strftime("%d-%B-%Y at %H:%M")
         self.data_logger_is_built = False
         self.error_logger_is_built = False
@@ -60,12 +60,12 @@ class VKStalk:
         self.secondary_data_keys_list = []
         self.email_notifications = email_notifications
         self.mail_recipient = email
-        self.mail_notification_hours = [9,21]
+        self.mail_notification_hours = [10,23]
         self.last_mail_time = -1
-        self.summary_notification_days = [0,1,2,3,4,5,6]
-        self.summary_notification_hours = [9,15]
+        self.summary_notification_days = [6]
+        self.summary_notification_hours = [9]
         self.last_summary_mail_day = -1
-        self.max_files_for_summary = 10
+        self.max_files_for_summary = 7
 
 
         #pretify program version output
