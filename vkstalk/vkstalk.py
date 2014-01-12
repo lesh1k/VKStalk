@@ -200,12 +200,12 @@ class VKStalk:
             if (self.email_notifications
             and (datetime.now().hour in self.summary_notification_hours)
             and (time.localtime().tm_wday in self.summary_notification_days)
-            and (time.localtime().tm_wday != self.last_summary_mail_day)):
+            and (datetime.now().day != self.last_summary_mail_day)):
                 current_step = "Trying to send summary mail."
                 if self.debug_mode:
                     WriteDebugLog(current_step, userid=self.user_id)
                 if self.SendMail(mail_type='summary', filename=Summarize(user_name=self.user_data['name'], max_files=self.max_files_for_summary)):
-                    self.last_summary_mail_day = time.localtime().tm_wday
+                    self.last_summary_mail_day = datetime.now().day
         except Exception as e:
             current_step = "Could not send SUMMARY email."
             if self.debug_mode:
