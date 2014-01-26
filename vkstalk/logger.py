@@ -157,6 +157,7 @@ def Summarize(user_name='', log_folder='Data/Logs/', extension=".log", max_files
     #get all log files list
     user_last_name = user_name.split()[-1]
     FILE_LIST = glob.glob('*'+user_last_name+extension)
+    FILE_LIST.sort()
     #shorten list
     if max_files!=-1 and len(FILE_LIST)>max_files:
         FILE_LIST = FILE_LIST[-max_files:]

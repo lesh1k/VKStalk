@@ -63,9 +63,9 @@ class VKStalk:
         self.mail_notification_hours = [10,23]
         self.last_mail_time = -1
         self.summary_notification_days = [6]
-        self.summary_notification_hours = [9]
+        self.summary_notification_hours = [10]
         self.last_summary_mail_day = -1
-        self.max_files_for_summary = 7
+        self.max_files_for_summary = 8 #7 will consider Mon-Sun. 8 for Sun-Sun, so that data saved on sunday after 10AM is also considered
 
 
         #pretify program version output
