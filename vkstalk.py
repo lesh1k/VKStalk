@@ -50,7 +50,7 @@ class VKStalk:
         self.last_error = 'No errors yet =)'
         self.error_counter = 0
         self.logs_counter = 0
-        self.version = "| VKStalk ver. 4.0.0 |"
+        self.version = "| VKStalk ver. 4.0.1 |"
         self.birth = datetime.now().strftime("%d-%B-%Y at %H:%M")
         self.data_logger_is_built = False
         self.error_logger_is_built = False
@@ -66,6 +66,8 @@ class VKStalk:
         self.summary_notification_hours = [10]
         self.last_summary_mail_day = -1
         self.max_files_for_summary = 8 #7 will consider Mon-Sun. 8 for Sun-Sun, so that data saved on sunday after 10AM is also considered
+        self.prev_photo_change = None
+        self.prev_photos_with_change = None
 
 
         #pretify program version output
@@ -115,6 +117,19 @@ class VKStalk:
                 secondary_data_changes = 0
                 for key in self.secondary_data_keys_list:
                     if key in self.user_data.keys() and key in self.prev_user_data.keys():
+                        
+                        if "photos" == key and self.user_data[key] != self.prev_user_data[key]:
+                            if self.prev_photo_change and self.user_data[key] in self.prev_photo_change and self.prev_user_data[key] in self.prev_photo_change:
+                                continue
+                            else:
+                                self.prev_photo_change = [self.prev_user_data[key], self.user_data[key]]
+                                
+                        if  "photos_with_" in key and self.user_data[key] != self.prev_user_data[key]:
+                            if self.prev_photos_with_change and self.user_data[key] in self.prev_photos_with_change and self.prev_user_data[key] in self.prev_photos_with_change:
+                                continue
+                            else:
+                                self.prev_photos_with_change = [self.prev_user_data[key], self.user_data[key]]
+                       
                         if self.user_data[key] != self.prev_user_data[key]:
                             secondary_data_changes += 1
                             self.log = self.log.rstrip()+'\n'+key.replace('_', ' ').capitalize()+': '+str(self.prev_user_data[key])+' => '+str(self.user_data[key])+'\n'
