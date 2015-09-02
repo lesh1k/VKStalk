@@ -1,0 +1,11 @@
+​vkstalk
+
+☐ Waiting list
+   ☐ Memory management. Kill threads that did their job
+   ☐ Build installer
+   ☐ Code review and refactoring
+   ☐ Add a thread that checks the time of last log. If time>6min, it kills the main thread and starts a new one, plus writes an error
+   ☐ GUI
+☐ Core functionality
+   ☐ Today/yesterday still does not work properly
+   ☐ Finalize work with the logger
