@@ -47,20 +47,31 @@ class VKStalk:
     #     Starts an infinite loop (while True) calling self.SingleRequest()
 
     def __init__(self, user_id, debug_mode=False, email_notifications=False, email=''):
+        # In progress. Extracting user data to User object
         user = User(user_id)
         self.user_id = user_id
         self.user_data = {}
 
+        # In progress. Extracting configs.
+        self.time_step = config.DATA_FETCH_INTERVAL
+        self.version = "| VKStalk ver. {} |".format(config.VERSION)
+        self.birth = datetime.now().strftime(config.DATETIME_FORMAT)
+        self.mail_notification_hours = config.MAIL_NOTIFICATION_HOURS
+        self.summary_notification_days = config.REPORT_DAYS
+        self.summary_notification_hours = config.REPORT_HOURS
+        self.max_files_for_summary = config.MAX_FILES_PER_REPORT
+
+
         self.prev_user_data = {
             'online': '_not_found', 'status': '_not_found_first_start'}
-        self.time_step = config.DATA_FETCH_INTERVAL
+        
         self.last_log = ''
         self.log = ''
         self.last_error = 'No errors yet =)'
         self.error_counter = 0
         self.logs_counter = 0
-        self.version = "| VKStalk ver. {} |".format(config.VERSION)
-        self.birth = datetime.now().strftime(config.DATETIME_FORMAT)
+        
+        
         self.data_logger_is_built = False
         self.error_logger_is_built = False
         self.debug_mode = debug_mode
@@ -69,14 +80,14 @@ class VKStalk:
         self.secondary_data_keys_list = []
         self.email_notifications = email_notifications
         self.mail_recipient = email
-        self.mail_notification_hours = config.MAIL_NOTIFICATION_HOURS
+        
         self.last_mail_time = -1
-        self.summary_notification_days = config.REPORT_DAYS
-        self.summary_notification_hours = config.REPORT_HOURS
+        
+        
         self.last_summary_mail_day = -1
         # 7 will consider Mon-Sun. 8 for Sun-Sun, so that data saved on sunday
         # after 10AM is also considered
-        self.max_files_for_summary = config.MAX_FILES_PER_REPORT
+        
         self.prev_photo_change = None
         self.prev_photos_with_change = None
 
