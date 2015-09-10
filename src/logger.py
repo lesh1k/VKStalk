@@ -1,5 +1,8 @@
+import config
+
 # ptyhon modules
 import logging
+import logging.handlers
 import time  # used for time.sleep()
 import os  # to check if a file exists
 import string
@@ -7,151 +10,81 @@ import glob
 import codecs
 
 
-def SetupLogger(logger_name, log_file='empty.log', log_format=None, log_date_format=None,
-                log_file_mode='a', level=logging.INFO,
-                add_stream_handler=False, add_file_handler=False):
-    l = logging.getLogger(logger_name)
-    formatter = logging.Formatter(log_format, log_date_format)
-    if add_file_handler:
-        fileHandler = logging.FileHandler(log_file, mode=log_file_mode)
-        fileHandler.setFormatter(formatter)
-    if add_stream_handler:
-        streamHandler = logging.StreamHandler()
-        streamHandler.setFormatter(formatter)
+class UserActivityTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
+    # filters out only logs with level == 21.
+    # Meaning these are USER_ACTIVITY logs
 
-    l.setLevel(level)
-    if add_file_handler:
-        l.addHandler(fileHandler)
-    if add_stream_handler:
-        l.addHandler(streamHandler)
+    def emit(self, record):
+        if not record.levelno == 21:
+            return
+        super(UserActivityTimedRotatingFileHandler, self).emit(record)
 
 
-def CreateLogFolders():
-    # Creates the following tree if not present yet:
-    # Data-> [Logs, Errors, Debug]
-    current_path = '/'.join(__file__.split('/')[:-1])
-    data_folder = os.path.join(current_path, "Data")
-    error_folder = os.path.join(current_path, "Data", "Errors")
-    logs_folder = os.path.join(current_path, "Data", "Logs")
-    debug_folder = os.path.join(current_path, "Data", "Debug")
-    summaries_folder = os.path.join(current_path, "Data", "Summaries")
+class UserActivityStreamHandler(logging.StreamHandler):
+    # filters out only logs with level == 21.
+    # Meaning these are USER_ACTIVITY logs
 
-    try:
-        if not os.path.exists(data_folder):
-            os.mkdir(data_folder)
-        if not os.path.exists(logs_folder):
-            os.mkdir(logs_folder)
-        if not os.path.exists(error_folder):
-            os.mkdir(error_folder)
-        if not os.path.exists(debug_folder):
-            os.mkdir(debug_folder)
-        if not os.path.exists(summaries_folder):
-            os.mkdir(summaries_folder)
-    except:
-        #Here be the Error logging line#
-        return False
+    def emit(self, record):
+        if not record.levelno == 21:
+            return
+        logging.StreamHandler.emit(self, record)
 
 
-def SetupLogging():
-    CreateLogFolders()
+class Logger:
+
+    def __init__(self, user_id, log_level=logging.WARNING):
+        self.user_id = user_id
+        self.make_log_dirs()
+        self.name = "logger_{}".format(user_id)
+        self.logger = logging.getLogger(self.name)
+        self.logger.setLevel(logging.INFO)
+        USER_ACTIVITY = 21
+        logging.addLevelName(USER_ACTIVITY, "USER_ACTIVITY")
+
+        console_handler = UserActivityStreamHandler()
+        console_formatter = logging.Formatter("%(message)s")
+        console_handler.setFormatter(console_formatter)
+        console_handler.setLevel(USER_ACTIVITY)
+
+        activity_log_file = os.path.join(
+            config.USER_ACTIVITY_LOGS_PATH.format(self.user_id), self.user_id)
+        activity_handler = UserActivityTimedRotatingFileHandler(
+            activity_log_file, when="midnight")
+        activity_formatter = logging.Formatter("%(message)s")
+        activity_handler.setFormatter(activity_formatter)
+        activity_handler.setLevel(USER_ACTIVITY)
+
+        debug_log_file = os.path.join(
+            config.LOGS_PATH.format(self.user_id), self.user_id)
+        debug_handler = logging.handlers.TimedRotatingFileHandler(
+            debug_log_file, when="midnight")
+        debug_formatter = logging.Formatter(
+            "%(levelname)s :: %(asctime)s :: %(message)s",
+            "[Date: %d-%m-%Y. Time: %H:%M:%S]")
+        debug_handler.setFormatter(debug_formatter)
+        debug_handler.setLevel(log_level)
+
+        self.logger.addHandler(console_handler)
+        self.logger.addHandler(activity_handler)
+        self.logger.addHandler(debug_handler)
+
+    def make_log_dirs(self):
+        # Makes directories for all log types, according to config.py
+        try:
+            for path in config.LOGS_DIRECTORIES:
+                os.mkdir(path.format(self.user_id))
+        except OSError as e:
+            if e.errno != 17:  # (17, 'File exists')
+                raise
+            print "Path '{0}' already exists, nothing to do here".format(
+                path.format(self.user_id))
+
+    def log_activity(self, message):
+        self.logger.log(21, message)
 
 
-def WriteDataLog(message, filename='', is_setup=False):
-    # Writes the log to the respective file. Creates the file if
-    # necessary
-    current_path = '/'.join(__file__.split('/')[:-1])
-    path = os.path.join(current_path, "Data", "Logs", filename)
-    if not is_setup or not os.path.exists(path):
-        logger = logging.getLogger('data_logger')
-        logger.handlers = []
-        # setup logger
-        SetupLogger(
-            'data_logger', path, log_format='%(message)s',
-            log_file_mode='a', level=logging.INFO, add_stream_handler=False, add_file_handler=True
-        )
-    logger = logging.getLogger('data_logger')
-    try:
-        logger.info(message)
-    except:
-        #Here be the Error logging line#
-        return False
-
-    return True
-
-
-def WriteErrorLog(message, is_setup=True, userid=''):
-    # Writes the error log to the respective file
-
-    current_path = '/'.join(__file__.split('/')[:-1])
-    filename = 'ERRORS - ' + userid + time.strftime(' - %Y.%m.%d') + '.log'
-    path = os.path.join(current_path, "Data", "Errors", filename)
-    if not is_setup or not os.path.exists(path):
-        logger = logging.getLogger('error_logger')
-        logger.handlers = []
-        # setup logger
-        SetupLogger(
-            'error_logger', path, log_format='%(levelname)s :: %(asctime)s :: %(message)s',
-            log_date_format='[Date: %d-%m-%Y. Time: %H:%M:%S]', log_file_mode='a', level=logging.ERROR,
-            add_stream_handler=False, add_file_handler=True
-        )
-
-    logger = logging.getLogger('error_logger')
-
-    try:
-        logger.error(message)
-    except:
-        #Here be the Error logging line#
-        return False
-
-    return True
-
-
-def WriteDebugLog(message, is_setup=True, userid=''):
-    # Writes the debug log to the respective file
-
-    current_path = '/'.join(__file__.split('/')[:-1])
-    filename = 'DEBUG - ' + userid + time.strftime(' - %Y.%m.%d') + '.log'
-    path = os.path.join(current_path, "Data", "Debug", filename)
-    if not is_setup or not os.path.exists(path):
-        logger = logging.getLogger('debug_logger')
-        logger.handlers = []
-        # setup logger
-        SetupLogger(
-            'debug_logger', path, log_format='%(levelname)s :: %(asctime)s :: %(message)s',
-            log_date_format='[Date: %d-%m-%Y. Time: %H:%M:%S]', log_file_mode='a',
-            level=logging.DEBUG, add_stream_handler=False, add_file_handler=True
-        )
-
-    logger = logging.getLogger('debug_logger')
-
-    try:
-        logger.debug(message)
-    except:
-        #Here be the Error logging line#
-        return False
-
-    return True
-
-
-def ConsoleLog(message, is_setup=True):
-    # Outputs info to console
-    if not is_setup:
-        # setup logger
-        SetupLogger(
-            'console_logger', log_format='%(message)s',
-            level=logging.INFO, add_stream_handler=True, add_file_handler=False
-        )
-    logger = logging.getLogger('console_logger')
-    try:
-        logger.info(message)
-    except:
-        #Here be the Error logging line#
-        return False
-
-    return True
-
-
-def Summarize(user_name='', log_folder='Data/Logs/', extension=".log", max_files=-1):
+def Summarize(user_name='', log_folder='Data/Logs/', extension=".log",
+              max_files=-1):
     if not user_name:
         return False
 

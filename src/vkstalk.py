@@ -61,17 +61,15 @@ class VKStalk:
         self.summary_notification_hours = config.REPORT_HOURS
         self.max_files_for_summary = config.MAX_FILES_PER_REPORT
 
-
         self.prev_user_data = {
             'online': '_not_found', 'status': '_not_found_first_start'}
-        
+
         self.last_log = ''
         self.log = ''
         self.last_error = 'No errors yet =)'
         self.error_counter = 0
         self.logs_counter = 0
-        
-        
+
         self.data_logger_is_built = False
         self.error_logger_is_built = False
         self.debug_mode = debug_mode
@@ -80,14 +78,13 @@ class VKStalk:
         self.secondary_data_keys_list = []
         self.email_notifications = email_notifications
         self.mail_recipient = email
-        
+
         self.last_mail_time = -1
-        
-        
+
         self.last_summary_mail_day = -1
         # 7 will consider Mon-Sun. 8 for Sun-Sun, so that data saved on sunday
         # after 10AM is also considered
-        
+
         self.prev_photo_change = None
         self.prev_photos_with_change = None
 
