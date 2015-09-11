@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import config
 
 # ptyhon modules
@@ -37,7 +38,7 @@ class Logger:
         self.make_log_dirs()
         self.name = "logger_{}".format(user_id)
         self.logger = logging.getLogger(self.name)
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(log_level)
         USER_ACTIVITY = 21
         logging.addLevelName(USER_ACTIVITY, "USER_ACTIVITY")
 

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
+import config
+import urlparse
 
 
-class User(id):
-    def __init__:
+class User:
+    def __init__(self, user_id):
         # Primary data
-        self.id = id
+        self.id = user_id
+        self.generate_user_page_url()
         self.name = None
-        self.last_visit = None
         self.status = None
         self.name = None
         self.status = None
@@ -26,3 +28,12 @@ class User(id):
         self.birthday = None
         self.hometown = None
         self.current_city = None
+
+    def generate_user_page_url(self):
+        # generate user specific URLs
+        # self.logger.logger.debug('Generating URLs')
+
+        if self.id.isdigit():
+            self.url = urlparse.urljoin(config.SOURCE_URL, "id" + self.id)
+        else:
+            self.url = urlparse.urljoin(config.SOURCE_URL, self.id)
