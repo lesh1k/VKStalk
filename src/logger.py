@@ -48,7 +48,8 @@ class Logger:
         console_handler.setLevel(USER_ACTIVITY)
 
         activity_log_file = os.path.join(
-            config.USER_ACTIVITY_LOGS_PATH.format(self.user_id), self.user_id)
+            config.USER_ACTIVITY_LOGS_PATH.format(self.user_id),
+            "user_" + self.user_id + ".log")
         activity_handler = UserActivityTimedRotatingFileHandler(
             activity_log_file, when="midnight")
         activity_formatter = logging.Formatter("%(message)s")
@@ -82,6 +83,9 @@ class Logger:
 
     def log_activity(self, message):
         self.logger.log(21, message)
+
+    def console_log(self, message):
+        pass
 
 
 def Summarize(user_name='', log_folder='Data/Logs/', extension=".log",

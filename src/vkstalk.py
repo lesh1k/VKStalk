@@ -48,31 +48,27 @@ class VKStalk:
     #     Starts an infinite loop (while True) calling self.SingleRequest()
 
     def __init__(self, user_id, log_level=21, email_notifications=False, email=''):
-        self.user = User(user_id)
-        self.logger = Logger(user_id, 10)
-        # self.user_id = user_id
-        # self.user_data = {}
+        self.birth = datetime.now().strftime(config.DATETIME_FORMAT)
 
-        # In progress. Extracting configs.
-        self.time_step = config.DATA_FETCH_INTERVAL
+        self.user = User(user_id)
+        self.prev_user = None
+
+        self.logger = Logger(user_id, 10)
+
         self.version = "| VKStalk ver. {} |".format(config.VERSION)
         # pretify program version output
         self.version = '\n' + '=' * \
             ((42 - len(self.version)) / 2) + self.version + \
             '=' * ((42 - len(self.version)) / 2) + '\n\n'
 
-        self.birth = datetime.now().strftime(config.DATETIME_FORMAT)
         self.mail_notification_hours = config.MAIL_NOTIFICATION_HOURS
         self.summary_notification_days = config.REPORT_DAYS
         self.summary_notification_hours = config.REPORT_HOURS
         self.max_files_for_summary = config.MAX_FILES_PER_REPORT
 
-        self.prev_user_data = {
-            'online': '_not_found', 'status': '_not_found_first_start'}
-
-        self.last_log = ''
+        self.prev_log = ''
         self.log = ''
-        self.last_error = 'No errors yet =)'
+        self.last_error = None
         self.error_counter = 0
         self.logs_counter = 0
 
@@ -100,47 +96,46 @@ class VKStalk:
     def PrepareLog(self):
         self.logger.logger.debug('Preparing log')
         # Save prev. log file
-        self.last_log = self.log
+        # self.last_log = self.log
         # Assume log will be written
         self.logs_counter += 1
 
         # Common log to file
-        self.log = (
-            self.user.name + '  --  ' +
-            self.user.last_visit +
-            '\nStatus: ' + self.user.status + '\n\n'
-        )
+        self.log = "{0} -- {1}\nStatus: {2}\n\n".format(self.user.name,
+                                                        self.user.last_visit,
+                                                        self.user.status
+                                                        )
         # Looking for changes in secondary data
-        try:
-            if self.logs_counter > 1:
-                secondary_data_changes = 0
-                for key in self.secondary_data_keys_list:
-                    if key in self.user_data.keys() and key in self.prev_user_data.keys():
+        # try:
+        #     if self.logs_counter > 1:
+        #         secondary_data_changes = 0
+        #         for key in self.secondary_data_keys_list:
+        #             if key in self.user_data.keys() and key in self.prev_user_data.keys():
 
-                        if "photos" == key and self.user_data[key] != self.prev_user_data[key]:
-                            if self.prev_photo_change and self.user_data[key] in self.prev_photo_change and self.prev_user_data[key] in self.prev_photo_change:
-                                continue
-                            else:
-                                self.prev_photo_change = [
-                                    self.prev_user_data[key], self.user_data[key]]
+        #                 if "photos" == key and self.user_data[key] != self.prev_user_data[key]:
+        #                     if self.prev_photo_change and self.user_data[key] in self.prev_photo_change and self.prev_user_data[key] in self.prev_photo_change:
+        #                         continue
+        #                     else:
+        #                         self.prev_photo_change = [
+        #                             self.prev_user_data[key], self.user_data[key]]
 
-                        if "photos_with_" in key and self.user_data[key] != self.prev_user_data[key]:
-                            if self.prev_photos_with_change and self.user_data[key] in self.prev_photos_with_change and self.prev_user_data[key] in self.prev_photos_with_change:
-                                continue
-                            else:
-                                self.prev_photos_with_change = [
-                                    self.prev_user_data[key], self.user_data[key]]
+        #                 if "photos_with_" in key and self.user_data[key] != self.prev_user_data[key]:
+        #                     if self.prev_photos_with_change and self.user_data[key] in self.prev_photos_with_change and self.prev_user_data[key] in self.prev_photos_with_change:
+        #                         continue
+        #                     else:
+        #                         self.prev_photos_with_change = [
+        #                             self.prev_user_data[key], self.user_data[key]]
 
-                        if self.user_data[key] != self.prev_user_data[key]:
-                            secondary_data_changes += 1
-                            self.log = self.log.rstrip() + '\n' + key.replace('_', ' ').capitalize() + \
-                                ': ' + \
-                                str(self.prev_user_data[
-                                    key]) + ' => ' + str(self.user_data[key]) + '\n'
-                self.log += '\n'
-        except Exception as e:
-            self.logger.logger.error(
-                "Error while adding extra info to the log: {}".format(e))
+        #                 if self.user_data[key] != self.prev_user_data[key]:
+        #                     secondary_data_changes += 1
+        #                     self.log = self.log.rstrip() + '\n' + key.replace('_', ' ').capitalize() + \
+        #                         ': ' + \
+        #                         str(self.prev_user_data[
+        #                             key]) + ' => ' + str(self.user_data[key]) + '\n'
+        #         self.log += '\n'
+        # except Exception as e:
+        #     self.logger.logger.error(
+        #         "Error while adding extra info to the log: {}".format(e))
             # self.HandleError(
             #     step='Adding extra info to log.',
             #     exception_msg=e,
@@ -155,31 +150,31 @@ class VKStalk:
         self.log = self.log_time + self.log.rstrip() + '\n\n'
 
         # first log to file
-        filename = time.strftime(
-            '%Y.%m.%d') + '-' + self.user.name + '.log'
-        path = os.path.join(self.current_path, "Data", "Logs", filename)
-        first_log_to_file = not os.path.exists(path)
-        self.filename = path
+        # filename = time.strftime(
+        #     '%Y.%m.%d') + '-' + self.user.name + '.log'
+        # path = os.path.join(self.current_path, "Data", "Logs", filename)
+        # first_log_to_file = not os.path.exists(path)
+        # self.filename = path
 
-        if ((self.user_data['online'] != self.prev_user_data['online'])
-                or (self.user_data['mobile_version'] != self.prev_user_data['mobile_version'])
-                or (self.user_data['status'] != self.prev_user_data['status'])
-                or (self.user.name != self.prev_user.name)
-                or (first_log_to_file)
-                or (secondary_data_changes > 0)):
-            write_log = True  # a log should be written. There is new data.
-        else:
-            # Assumption was wrong. The log wasn't written thus, counter
-            # decreased.
-            self.logs_counter -= 1
-            # No need to write the log, there is no new data.
-            write_log = False
+        # if ((self.user_data['online'] != self.prev_user_data['online'])
+        #         or (self.user_data['mobile_version'] != self.prev_user_data['mobile_version'])
+        #         or (self.user_data['status'] != self.prev_user_data['status'])
+        #         or (self.user.name != self.prev_user.name)
+        #         or (first_log_to_file)
+        #         or (secondary_data_changes > 0)):
+        #     write_log = True  # a log should be written. There is new data.
+        # else:
+        #     # Assumption was wrong. The log wasn't written thus, counter
+        #     # decreased.
+        #     self.logs_counter -= 1
+        #     # No need to write the log, there is no new data.
+        #     write_log = False
 
         # Prepare output to console
         self.console_log = config.CONSOLE_LOG_TEMPLATE.format(
             self.version,
             self.birth,
-            self.user_id,
+            self.user.id,
             self.user.name,
             self.logs_counter,
             self.error_counter,
@@ -187,7 +182,7 @@ class VKStalk:
             self.last_error,
         )
 
-        if first_log_to_file:  # first log to file
+        if True or first_log_to_file:  # first log to file
             # General info. Written once on file creation.
             self.general_info = 'Log file created on' + \
                 time.strftime(' %d-%B-%Y at %H:%M:%S')
@@ -203,7 +198,7 @@ class VKStalk:
         self.logger.logger.debug('Log preparation finished')
         # Save previous data
         # update last user_data to the current one
-        self.prev_user_data = self.user_data
+        self.prev_user = self.user
 
         # Send email if the time has come =)
         # try:
@@ -257,7 +252,8 @@ class VKStalk:
         #     pass
 
         clear_screen()
-        return write_log
+        # return write_log
+        return True
 
     def CookSoup(self):
         # Return the soup obtained from scrapping the page or False if any
@@ -626,41 +622,39 @@ class VKStalk:
     def ShowWriteInfo(self):
         # if there's new user data,  a new status or online changed from False to True or True to False
         # write the new log to file
-        import ipdb; ipdb.set_trace()
-        filename = time.strftime(
-            '%Y.%m.%d') + '-' + self.user_data['name'] + '.log'
-        path = os.path.join(self.current_path, "Data", "Logs" + filename)
-        write_log = self.PrepareLog()
-        if write_log:
-            if self.debug_mode:
-                WriteDebugLog('Writing log to file', userid=self.user_id)
+        # filename = time.strftime(
+        #     '%Y.%m.%d') + '-' + self.user_data['name'] + '.log'
+        # path = os.path.join(self.current_path, "Data", "Logs" + filename)
+        # write_log = self.PrepareLog()
+        if self.PrepareLog():
+            self.logger.logger.debug('Writing log to file')
             try:
-                self.data_logger_is_built = WriteDataLog(
-                    self.log, filename, self.data_logger_is_built and self.user_data['name'] in filename)
+                self.logger.log_activity(self.log)
             except Exception as e:
-                self.HandleError(
-                    step='Writing Data log to file.',
-                    exception_msg=e,
-                    dump_vars=True,
-                    console_msg='Could not write log. Retrying in 10 seconds...',
-                    sleep=10,
-                    debug_msg='Restarting request.'
-                )
+                self.logger.logger.error("Error in writing Data to log file and console")
+                # self.HandleError(
+                #     step='Writing Data log to file.',
+                #     exception_msg=e,
+                #     dump_vars=True,
+                #     console_msg='Could not write log. Retrying in 10 seconds...',
+                #     sleep=10,
+                #     debug_msg='Restarting request.'
+                # )
                 return False
 
-        try:
-            self.logger.logger.debug('Output to console')
-            # ConsoleLog(self.console_log)
-        except Exception as e:
-            # self.HandleError(
-            #     step='Output log to console.',
-            #     exception_msg=e,
-            #     dump_vars=True,
-            #     console_msg='Could not write console log. Retrying in 10 seconds',
-            #     sleep=10,
-            #     debug_msg='Restarting request.'
-            # )
-            return False
+        # try:
+        #     self.logger.logger.debug('Output to console')
+        #     # ConsoleLog(self.console_log)
+        # except Exception as e:
+        #     # self.HandleError(
+        #     #     step='Output log to console.',
+        #     #     exception_msg=e,
+        #     #     dump_vars=True,
+        #     #     console_msg='Could not write console log. Retrying in 10 seconds',
+        #     #     sleep=10,
+        #     #     debug_msg='Restarting request.'
+        #     # )
+        #     return False
         return True
 
     #######################################END logging########################
@@ -782,7 +776,7 @@ class VKStalk:
         while True:
             if self.SingleRequest() == False:
                 break
-            time.sleep(self.time_step)
+            time.sleep(config.DATA_FETCH_INTERVAL)
         ##RESTART APP###
         clear_screen()
         # Restart main cycle
