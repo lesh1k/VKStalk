@@ -11,50 +11,60 @@ import glob
 import codecs
 
 
-class UserActivityTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
-    # filters out only logs with level == 21.
-    # Meaning these are USER_ACTIVITY logs
+# class UserActivityTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler):
+#     # filters out only logs with level == 19.
+#     # Meaning these are USER_ACTIVITY logs
 
-    def emit(self, record):
-        if not record.levelno == 21:
-            return
-        super(UserActivityTimedRotatingFileHandler, self).emit(record)
+#     def emit(self, record):
+#         if not record.levelno == 19:
+#             return
+#         super(UserActivityTimedRotatingFileHandler, self).emit(record)
 
 
-class UserActivityStreamHandler(logging.StreamHandler):
-    # filters out only logs with level == 21.
-    # Meaning these are USER_ACTIVITY logs
+# class UserActivityStreamHandler(logging.StreamHandler):
+#     # filters out only logs with level == 19.
+#     # Meaning these are USER_ACTIVITY logs
 
-    def emit(self, record):
-        if not record.levelno == 21:
-            return
-        logging.StreamHandler.emit(self, record)
+#     def emit(self, record):
+#         if not record.levelno == 19:
+#             return
+#         logging.StreamHandler.emit(self, record)
 
 
 class Logger:
 
     def __init__(self, user_id, log_level=logging.WARNING):
+        USER_ACTIVITY = 19
+        logging.addLevelName(USER_ACTIVITY, "USER_ACTIVITY")
+
         self.user_id = user_id
         self.make_log_dirs()
         self.name = "logger_{}".format(user_id)
         self.logger = logging.getLogger(self.name)
         self.logger.setLevel(log_level)
-        USER_ACTIVITY = 21
-        logging.addLevelName(USER_ACTIVITY, "USER_ACTIVITY")
+        self.console_logger = logging.getLogger("console_{}".format(self.name))
+        self.console_logger.setLevel(USER_ACTIVITY)
+        self.activity_logger = logging.getLogger("activity_{}".format(self.name))
+        self.activity_logger.setLevel(USER_ACTIVITY)
 
-        console_handler = UserActivityStreamHandler()
+        # console_handler = UserActivityStreamHandler()
+        console_handler = logging.StreamHandler()
         console_formatter = logging.Formatter("%(message)s")
         console_handler.setFormatter(console_formatter)
-        console_handler.setLevel(USER_ACTIVITY)
+        # console_handler.setLevel(USER_ACTIVITY)
+        self.console_logger.addHandler(console_handler)
 
-        activity_log_file = os.path.join(
+        self.activity_log_file = os.path.join(
             config.USER_ACTIVITY_LOGS_PATH.format(self.user_id),
             "user_" + self.user_id + ".log")
-        activity_handler = UserActivityTimedRotatingFileHandler(
-            activity_log_file, when="midnight")
+        # activity_handler = UserActivityTimedRotatingFileHandler(
+        #     self.activity_log_file, when="midnight")
+        activity_handler = logging.handlers.TimedRotatingFileHandler(
+            self.activity_log_file, when="midnight")
         activity_formatter = logging.Formatter("%(message)s")
         activity_handler.setFormatter(activity_formatter)
-        activity_handler.setLevel(USER_ACTIVITY)
+        # activity_handler.setLevel(USER_ACTIVITY)
+        self.activity_logger.addHandler(activity_handler)
 
         debug_log_file = os.path.join(
             config.LOGS_PATH.format(self.user_id), self.user_id)
@@ -64,10 +74,10 @@ class Logger:
             "%(levelname)s :: %(asctime)s :: %(message)s",
             "[Date: %d-%m-%Y. Time: %H:%M:%S]")
         debug_handler.setFormatter(debug_formatter)
-        debug_handler.setLevel(log_level)
+        # debug_handler.setLevel(log_level)
 
-        self.logger.addHandler(console_handler)
-        self.logger.addHandler(activity_handler)
+        # self.logger.addHandler(console_handler)
+        # self.logger.addHandler(activity_handler)
         self.logger.addHandler(debug_handler)
 
     def make_log_dirs(self):
@@ -82,10 +92,11 @@ class Logger:
                 path.format(self.user_id))
 
     def log_activity(self, message):
-        self.logger.log(21, message)
+        self.console_logger.log(19, message)
+        self.activity_logger.log(19, message)
 
     def console_log(self, message):
-        pass
+        self.console_logger.log(19, message)
 
 
 def Summarize(user_name='', log_folder='Data/Logs/', extension=".log",

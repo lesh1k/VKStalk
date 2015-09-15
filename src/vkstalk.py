@@ -53,7 +53,7 @@ class VKStalk:
         self.user = User(user_id)
         self.prev_user = None
 
-        self.logger = Logger(user_id, 10)
+        self.vk_logger = Logger(user_id, 10)
 
         self.version = "| VKStalk ver. {} |".format(config.VERSION)
         # pretify program version output
@@ -90,11 +90,11 @@ class VKStalk:
 
         clear_screen()
         # Print greeting message
-        # self.logger.console_log(
+        # self.vk_logger.console_log(
         #     "VKStalk successfully launched! Have a tea and analyze the results.")
 
     def PrepareLog(self):
-        self.logger.logger.debug('Preparing log')
+        self.vk_logger.logger.debug('Preparing log')
         # Save prev. log file
         # self.last_log = self.log
         # Assume log will be written
@@ -110,21 +110,22 @@ class VKStalk:
         #     if self.logs_counter > 1:
         #         secondary_data_changes = 0
         #         for key in self.secondary_data_keys_list:
-        #             if key in self.user_data.keys() and key in self.prev_user_data.keys():
+        # if key in self.user_data.keys() and key in
+        # self.prev_user_data.keys():
 
         #                 if "photos" == key and self.user_data[key] != self.prev_user_data[key]:
         #                     if self.prev_photo_change and self.user_data[key] in self.prev_photo_change and self.prev_user_data[key] in self.prev_photo_change:
         #                         continue
         #                     else:
         #                         self.prev_photo_change = [
-        #                             self.prev_user_data[key], self.user_data[key]]
+        # self.prev_user_data[key], self.user_data[key]]
 
         #                 if "photos_with_" in key and self.user_data[key] != self.prev_user_data[key]:
         #                     if self.prev_photos_with_change and self.user_data[key] in self.prev_photos_with_change and self.prev_user_data[key] in self.prev_photos_with_change:
         #                         continue
         #                     else:
         #                         self.prev_photos_with_change = [
-        #                             self.prev_user_data[key], self.user_data[key]]
+        # self.prev_user_data[key], self.user_data[key]]
 
         #                 if self.user_data[key] != self.prev_user_data[key]:
         #                     secondary_data_changes += 1
@@ -134,16 +135,16 @@ class VKStalk:
         #                             key]) + ' => ' + str(self.user_data[key]) + '\n'
         #         self.log += '\n'
         # except Exception as e:
-        #     self.logger.logger.error(
+        #     self.vk_logger.logger.error(
         #         "Error while adding extra info to the log: {}".format(e))
-            # self.HandleError(
-            #     step='Adding extra info to log.',
-            #     exception_msg=e,
-            #     dump_vars=True,
-            #     console_msg='Error while adding extra info to the log.\n' +
-            #     str(e)
-            # )
-            # pass
+        # self.HandleError(
+        #     step='Adding extra info to log.',
+        #     exception_msg=e,
+        #     dump_vars=True,
+        #     console_msg='Error while adding extra info to the log.\n' +
+        #     str(e)
+        # )
+        # pass
         # Generating a timestamp and adding it to the log string
         self.log_time = datetime.strftime(
             datetime.now(), '>>>Date: %d-%m-%Y. Time: %H:%M:%S\n')
@@ -162,12 +163,12 @@ class VKStalk:
         #         or (self.user.name != self.prev_user.name)
         #         or (first_log_to_file)
         #         or (secondary_data_changes > 0)):
-        #     write_log = True  # a log should be written. There is new data.
+        # write_log = True  # a log should be written. There is new data.
         # else:
-        #     # Assumption was wrong. The log wasn't written thus, counter
-        #     # decreased.
+        # Assumption was wrong. The log wasn't written thus, counter
+        # decreased.
         #     self.logs_counter -= 1
-        #     # No need to write the log, there is no new data.
+        # No need to write the log, there is no new data.
         #     write_log = False
 
         # Prepare output to console
@@ -182,7 +183,9 @@ class VKStalk:
             self.last_error,
         )
 
-        if True or first_log_to_file:  # first log to file
+        log_file_size = os.stat(self.vk_logger.activity_log_file).st_size
+        import ipdb;ipdb.set_trace()
+        if log_file_size == 0:  # first log to file
             # General info. Written once on file creation.
             self.general_info = 'Log file created on' + \
                 time.strftime(' %d-%B-%Y at %H:%M:%S')
@@ -192,10 +195,10 @@ class VKStalk:
                     unicode(value)
             self.general_info += '\n\n\n\n'
 
-            self.logger.logger.debug('General info set')
+            self.vk_logger.logger.debug('General info set')
             self.log = self.general_info + self.log
 
-        self.logger.logger.debug('Log preparation finished')
+        self.vk_logger.logger.debug('Log preparation finished')
         # Save previous data
         # update last user_data to the current one
         self.prev_user = self.user
@@ -265,7 +268,7 @@ class VKStalk:
         # url_mobile='http://m.vk.com/'
 
         # generate user specific URLs
-        # self.logger.logger.debug('Generating URLs')
+        # self.vk_logger.logger.debug('Generating URLs')
 
         # if self.user.id.isdigit():
         #     self.url += 'id' + self.user_id
@@ -275,16 +278,16 @@ class VKStalk:
         # url_mobile += self.user_id
 
         # requesting the page
-        self.logger.logger.debug('Fetching HTML page')
+        self.vk_logger.logger.debug('Fetching HTML page')
 
         try:
             cHandle = urllib2.urlopen(self.user.url, timeout=20)
             html = cHandle.read()
             cHandle.close()
         except Exception as e:
-            self.logger.logger.error(
+            self.vk_logger.logger.error(
                 "Could not fetch HTML page. Retrying in 7 seconds...")
-            self.logger.logger.debug("Restarting request")
+            self.vk_logger.logger.debug("Restarting request")
             # self.HandleError(
             #     step='Fetching HTML page.',
             #     exception_msg=e,
@@ -296,9 +299,9 @@ class VKStalk:
             return False
 
         # set soup
-        self.logger.logger.debug('Cooking soup')
+        self.vk_logger.logger.debug('Cooking soup')
         self.soup = BeautifulSoup(html)
-        self.logger.logger.debug('Cooking soup finished')
+        self.vk_logger.logger.debug('Cooking soup finished')
 
         return True
 
@@ -315,7 +318,7 @@ class VKStalk:
         # exist
         max_attempts = config.MAX_CONNECTION_ATTEMPTS
         for attempt in xrange(1, max_attempts + 1):
-            self.logger.logger.debug(
+            self.vk_logger.logger.debug(
                 "Checking if the profile exists and is accessible." +
                 "Attempt ({0} of {1})".format(attempt, max_attempts))
             if ((self.soup.find('div', {'class': 'service_msg_null'}))
@@ -339,7 +342,7 @@ class VKStalk:
                 self.CookSoup()
                 profile_private = True
             else:
-                self.logger.logger.debug('Profile PUBLIC. OK!')
+                self.vk_logger.logger.debug('Profile PUBLIC. OK!')
                 profile_private = False
                 break
         if profile_private:
@@ -348,7 +351,7 @@ class VKStalk:
             # Access forbidden.")
             exit("Private profile. Access forbidden")
 
-        # self.logger.logger.debug("Initializing user_data with default values")
+        # self.vk_logger.logger.debug("Initializing user_data with default values")
         # Initialize user_data dictionary with default values
         # user_data = {}
         # Primary data
@@ -377,9 +380,9 @@ class VKStalk:
         #     WriteDebugLog('Done', userid=self.user_id)
 
         #:Data fetching
-        self.logger.logger.debug("Start data fetching")
+        self.vk_logger.logger.debug("Start data fetching")
         # :Name
-        self.logger.logger.debug("Obtaining username")
+        self.vk_logger.logger.debug("Obtaining username")
         try:
             self.user.name = self.soup.html.head.title.text
             # normalize_unicode(self.user)
@@ -393,14 +396,14 @@ class VKStalk:
             if self.user.name[-2:] == 'VK':
                 self.user.name = self.user.name[:-2].rstrip()
         except Exception as e:
-            self.logger.logger.error("Trouble getting username")
+            self.vk_logger.logger.error("Trouble getting username")
             exit()
             # self.HandleError(
             #     step='Setting username.', exception_msg=e, dump_vars=True)
             return False
 
         # :Status
-        self.logger.logger.debug('Obtaining user status')
+        self.vk_logger.logger.debug('Obtaining user status')
         status = self.soup.find('div', {"class": "status"})
         if status:
             self.user.status = status.text
@@ -410,7 +413,7 @@ class VKStalk:
                 self.user.status = status.text
 
         # :Mobile version or not
-        self.logger.logger.debug(
+        self.vk_logger.logger.debug(
             "Determining if user is logged in from a mobile device.")
         try:
             # alt: self.soup.find('b',{'class':'lvi mlvi'})
@@ -423,7 +426,7 @@ class VKStalk:
             return False
 
         # :Online OR not [last seen time]
-        self.logger.logger.debug(
+        self.vk_logger.logger.debug(
             "Obtaining info about user ONLINE status (online/offline)")
         try:
             # If no concrete message for user being offline. Thus, will assume
@@ -537,19 +540,20 @@ class VKStalk:
                                          'Birthday', 'Facebook', 'Website', 'Phone', 'Hometown', 'Current city']
             self.short_profile_info = []
 
-            self.logger.logger.debug("Parsing 'pinfo_row'")
+            self.vk_logger.logger.debug("Parsing 'pinfo_row'")
             for item in self.soup.findAll(class_='pinfo_row'):
                 text = item.text
                 if ':' in text:
                     self.short_profile_info.append(text)
 
-            self.logger.logger.debug("Saving parsed data to 'user' instance")
+            self.vk_logger.logger.debug("Saving parsed data to 'user' instance")
             for info_item in self.short_profile_info:
                 item_title, item_value = info_item.split(":")
                 setattr(self.user, item_title.lower().replace(" ", "_").strip(),
                         item_value)
 
-            self.logger.logger.debug("Getting extra data (e.g. number of photos/communities)")
+            self.vk_logger.logger.debug(
+                "Getting extra data (e.g. number of photos/communities)")
             extra_data = self.soup.find(class_='profile_menu')
             if extra_data:
                 extra_data_list = []
@@ -559,7 +563,8 @@ class VKStalk:
                     if 'show more' not in item:
                         extra_data_list.append(item)
 
-            self.logger.logger.debug("Parsing extra data (e.g. number of photos/communities)")
+            self.vk_logger.logger.debug(
+                "Parsing extra data (e.g. number of photos/communities)")
             for item in extra_data_list:
                 item_parts = item.split(' ')
                 key = ''
@@ -572,9 +577,10 @@ class VKStalk:
                 key = key.replace('_', ' ').rstrip().replace(' ', '_')
                 # self.secondary_data_keys_list.append(key)
                 # user_data[key] = value
-                setattr(self.user, key.lower().replace(" ", "_").strip(), value)
+                setattr(
+                    self.user, key.lower().replace(" ", "_").strip(), value)
 
-            self.logger.logger.debug("Getting number of wall posts")
+            self.vk_logger.logger.debug("Getting number of wall posts")
             all_slim_headers = self.soup.findAll(class_='slim_header')
             if len(all_slim_headers) > 0:
                 for item in all_slim_headers:
@@ -593,7 +599,7 @@ class VKStalk:
                         else:
                             break
 
-            self.logger.logger.debug("Getting link to profile photo.")
+            self.vk_logger.logger.debug("Getting link to profile photo.")
             short_profile = self.soup.find(id="mcont")
             if short_profile:
                 short_profile = short_profile.find(class_='owner_panel')
@@ -607,11 +613,12 @@ class VKStalk:
                             # self.secondary_data_keys_list.append('photo')
 
         except Exception as e:
-            self.logger.logger.error(
+            self.vk_logger.logger.error(
                 "Got into an error in secondary data fetching and parsing." +
                 "ERR: {}".format(e))
             # self.HandleError(
-            #     step=current_step, exception_msg=e, dump_vars=True, debug_msg=current_step)
+            # step=current_step, exception_msg=e, dump_vars=True,
+            # debug_msg=current_step)
             return False
 
         # set object user_data
@@ -627,11 +634,12 @@ class VKStalk:
         # path = os.path.join(self.current_path, "Data", "Logs" + filename)
         # write_log = self.PrepareLog()
         if self.PrepareLog():
-            self.logger.logger.debug('Writing log to file')
+            self.vk_logger.logger.debug('Writing log to file')
             try:
-                self.logger.log_activity(self.log)
+                self.vk_logger.log_activity(self.log)
             except Exception as e:
-                self.logger.logger.error("Error in writing Data to log file and console")
+                self.vk_logger.logger.error(
+                    "Error in writing Data to log file and console")
                 # self.HandleError(
                 #     step='Writing Data log to file.',
                 #     exception_msg=e,
@@ -643,17 +651,17 @@ class VKStalk:
                 return False
 
         # try:
-        #     self.logger.logger.debug('Output to console')
-        #     # ConsoleLog(self.console_log)
+        #     self.vk_logger.logger.debug('Output to console')
+        # ConsoleLog(self.console_log)
         # except Exception as e:
-        #     # self.HandleError(
-        #     #     step='Output log to console.',
-        #     #     exception_msg=e,
-        #     #     dump_vars=True,
-        #     #     console_msg='Could not write console log. Retrying in 10 seconds',
-        #     #     sleep=10,
-        #     #     debug_msg='Restarting request.'
-        #     # )
+        # self.HandleError(
+        # step='Output log to console.',
+        # exception_msg=e,
+        # dump_vars=True,
+        # console_msg='Could not write console log. Retrying in 10 seconds',
+        # sleep=10,
+        # debug_msg='Restarting request.'
+        # )
         #     return False
         return True
 
@@ -662,7 +670,7 @@ class VKStalk:
     # ERROR handler
     def HandleError(self, step='unspecified', exception_msg='unspecified', dump_vars=False, console_msg='', sleep='', debug_msg=''):
         self.error_counter += 1
-        self.logger.logger.error(
+        self.vk_logger.logger.error(
             "Got to HandleError function, which is dummy!")
         pass
         # self.last_error = 'STEP: ' + step + \
@@ -758,7 +766,7 @@ class VKStalk:
 
     def SingleRequest(self):
         # ConsoleLog('Fetching user data...')
-        self.logger.logger.debug('Start single request')
+        self.vk_logger.logger.debug('Start single request')
         if self.CookSoup() == False:
             return False
         if self.GetUserData() == False:
@@ -768,11 +776,11 @@ class VKStalk:
         if not self.ShowWriteInfo():
             return False
 
-        self.logger.logger.debug('Finished single request\n\n')
+        self.vk_logger.logger.debug('Finished single request\n\n')
 
     def Work(self):
         # import ipdb; ipdb.set_trace()
-        self.logger.logger.debug('Begin work')
+        self.vk_logger.logger.debug('Begin work')
         while True:
             if self.SingleRequest() == False:
                 break
