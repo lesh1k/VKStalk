@@ -60,7 +60,9 @@ class Logger:
         # activity_handler = UserActivityTimedRotatingFileHandler(
         #     self.activity_log_file, when="midnight")
         activity_handler = logging.handlers.TimedRotatingFileHandler(
-            self.activity_log_file, when="midnight")
+            self.activity_log_file,
+            when=config.ACTIVITY_LOGS_ROTATE_WHEN,
+            interval=config.ACTIVITY_LOGS_ROTATE_INTERVAL)
         activity_formatter = logging.Formatter("%(message)s")
         activity_handler.setFormatter(activity_formatter)
         # activity_handler.setLevel(USER_ACTIVITY)
@@ -69,7 +71,9 @@ class Logger:
         debug_log_file = os.path.join(
             config.LOGS_PATH.format(self.user_id), self.user_id)
         debug_handler = logging.handlers.TimedRotatingFileHandler(
-            debug_log_file, when="midnight")
+            debug_log_file,
+            when=config.LOGS_ROTATE_WHEN,
+            interval=config.LOGS_ROTATE_INTERVAL)
         debug_formatter = logging.Formatter(
             "%(levelname)s :: %(asctime)s :: %(message)s",
             "[Date: %d-%m-%Y. Time: %H:%M:%S]")
@@ -92,7 +96,7 @@ class Logger:
                 path.format(self.user_id))
 
     def log_activity(self, message):
-        self.console_logger.log(19, message)
+        # self.console_logger.log(19, message)
         self.activity_logger.log(19, message)
 
     def console_log(self, message):

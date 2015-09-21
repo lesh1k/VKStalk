@@ -183,16 +183,22 @@ class VKStalk:
             self.last_error,
         )
 
+        self.vk_logger.log_activity("")  # triggers file creation if time has come
         log_file_size = os.stat(self.vk_logger.activity_log_file).st_size
-        import ipdb;ipdb.set_trace()
-        if log_file_size == 0:  # first log to file
-            # General info. Written once on file creation.
-            self.general_info = 'Log file created on' + \
-                time.strftime(' %d-%B-%Y at %H:%M:%S')
+
+        if log_file_size == 1:
+            # first log to file. 1 byte size, because of logger adding \n
+            file_handle = open(self.vk_logger.activity_log_file, 'w')
+            file_handle.write("")
+            file_handle.close()
+            # General info. Written once, on file creation.
+            self.general_info = "Log file created on {}".format(
+                time.strftime('%d-%B-%Y at %H:%M:%S'))
             for attr, value in self.user.__dict__.iteritems():
-                self.general_info += '\n' + \
-                    attr.replace('_', ' ').capitalize() + ': ' + \
-                    unicode(value)
+                self.general_info += "\n{0}: {1}".format(
+                    attr.replace('_', ' ').capitalize(),
+                    value
+                    )
             self.general_info += '\n\n\n\n'
 
             self.vk_logger.logger.debug('General info set')
@@ -637,6 +643,7 @@ class VKStalk:
             self.vk_logger.logger.debug('Writing log to file')
             try:
                 self.vk_logger.log_activity(self.log)
+                self.vk_logger.console_log(self.console_log)
             except Exception as e:
                 self.vk_logger.logger.error(
                     "Error in writing Data to log file and console")

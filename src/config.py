@@ -36,6 +36,11 @@ CONSOLE_LOG_TEMPLATE = (
     "=" * 14 + "| LAST ERROR |" + "=" * 14 + "\n\n{7}"
 )
 
+ACTIVITY_LOGS_ROTATE_INTERVAL = 1
+ACTIVITY_LOGS_ROTATE_WHEN = "midnight"
+LOGS_ROTATE_INTERVAL = 1
+LOGS_ROTATE_WHEN = "midnight"
+
 
 SOURCE_URL = "http://vk.com"
 
