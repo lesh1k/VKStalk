@@ -197,8 +197,7 @@ class Parser:
                         )
                         if (('yesterday' in last_seen) and
                                 (datetime.now().hour - hours_delta < 0)):
-                            last_seen_line = user_data[
-                                'last_visit'].replace('yesterday', 'today')
+                            last_seen_line = last_seen_line.replace('yesterday', 'today')
                         elif (('yesterday' in last_seen) and
                               (datetime.now().hour - hours_delta >= 0) and
                                 (date_time.hour + hours_delta >= 24)):
