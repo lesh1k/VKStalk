@@ -1,12 +1,13 @@
-VKStalk - VKontakte stalker, version 4.0.0
+#VKStalk - vk.com stalker
+v4.0.1
+
 =====================================================================================
-Written by Alexei Dvorac
 
 Dependencies:
 
-- Python 2.7.3-2.7.5
-- BeautifulSoup4
-======================================================================================
+* Python 2.7.3-2.7.5
+* BeautifulSoup4
+
 
 Python console application.
 This app allows collecting info about a VK.com user. 
