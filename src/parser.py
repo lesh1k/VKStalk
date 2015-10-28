@@ -14,12 +14,14 @@ import smtplib  # for mail sending
 from user import User
 import config
 import urlparse
+import sys
 # from utils import clear_screen, normalize_unicode
 
 
 class Parser:
-    def __init__(self):
+    def __init__(self, url):
         self.user = {}
+        self.url = url
 
     def cook_soup(self):
         # Return the soup obtained from scrapping the page or False if any
@@ -40,7 +42,7 @@ class Parser:
         # self.vk_logger.logger.debug('Fetching HTML page')
 
         try:
-            cHandle = urllib2.urlopen(self.user.url, timeout=20)
+            cHandle = urllib2.urlopen(self.url, timeout=20)
             self.html = cHandle.read()
             cHandle.close()
         except Exception as e:
@@ -55,7 +57,7 @@ class Parser:
             #     sleep=7,
             #     debug_msg='Restarting request.'
             # )
-            return False
+            print "Error in '{}'".format(sys._getframe().f_code.co_name)
 
         return True
 
@@ -82,97 +84,13 @@ class Parser:
         # :Online OR not [last seen time]
         self.user["online"] = self.is_user_online()
 
-        # Secondary data fectching
-        try:
-            current_step = "Fetching secondary data"
-            secondary_data_names_list = ['Skype', 'Twitter', 'Instagram', 'University',
-                                         'Birthday', 'Facebook', 'Website', 'Phone', 'Hometown', 'Current city']
-            self.short_profile_info = []
-
-            self.vk_logger.logger.debug("Parsing 'pinfo_row'")
-            for item in self.soup.findAll(class_='pinfo_row'):
-                text = item.text
-                if ':' in text:
-                    self.short_profile_info.append(text)
-
-            self.vk_logger.logger.debug("Saving parsed data to 'user' instance")
-            for info_item in self.short_profile_info:
-                item_title, item_value = info_item.split(":")
-                setattr(self.user, item_title.lower().replace(" ", "_").strip(),
-                        item_value)
-
-            self.vk_logger.logger.debug(
-                "Getting extra data (e.g. number of photos/communities)")
-            extra_data = self.soup.find(class_='profile_menu')
-            if extra_data:
-                extra_data_list = []
-                extra_data = extra_data.findAll(class_='pm_item')
-                for item in extra_data:
-                    item = item.text.lower()
-                    if 'show more' not in item:
-                        extra_data_list.append(item)
-
-            self.vk_logger.logger.debug(
-                "Parsing extra data (e.g. number of photos/communities)")
-            for item in extra_data_list:
-                item_parts = item.split(' ')
-                key = ''
-                value = ''
-                for part in item_parts:
-                    if part.isdigit():
-                        value = part
-                    else:
-                        key += part + '_'
-                key = key.replace('_', ' ').rstrip().replace(' ', '_')
-                # self.secondary_data_keys_list.append(key)
-                # user_data[key] = value
-                setattr(
-                    self.user, key.lower().replace(" ", "_").strip(), value)
-
-            self.vk_logger.logger.debug("Getting number of wall posts")
-            all_slim_headers = self.soup.findAll(class_='slim_header')
-            if len(all_slim_headers) > 0:
-                for item in all_slim_headers:
-                    if 'post' in item.text:
-                        number_of_wallposts = item.text.split()[0]
-                        # number_of_wallposts = number_of_wallposts.encode(
-                        #     'ascii', 'ignore')
-                        # clear number from punctuation
-                        # table = string.maketrans("", "")
-                        # number_of_wallposts = number_of_wallposts.translate(
-                        #     table, string.punctuation)
-                        if str(number_of_wallposts).isdigit():
-                            self.user.number_of_wallposts = number_of_wallposts
-                            # self.secondary_data_keys_list.append(
-                            #     'number_of_wallposts')
-                        else:
-                            break
-
-            self.vk_logger.logger.debug("Getting link to profile photo.")
-            short_profile = self.soup.find(id="mcont")
-            if short_profile:
-                short_profile = short_profile.find(class_='owner_panel')
-                if short_profile:
-                    photo_tag = short_profile.find('a')
-                    if photo_tag:
-                        photo_link = photo_tag.get('href')
-                        if photo_link:
-                            self.user.photo = urlparse.urljoin(self.user.url,
-                                                               photo_link)
-                            # self.secondary_data_keys_list.append('photo')
-
-        except Exception as e:
-            self.vk_logger.logger.error(
-                "Got into an error in secondary data fetching and parsing." +
-                "ERR: {}".format(e))
-            # self.HandleError(
-            # step=current_step, exception_msg=e, dump_vars=True,
-            # debug_msg=current_step)
-            return False
+        # :Secondary data fectching
+        user_secondary_data = self.get_user_secondary_data()
+        self.user.update(user_secondary_data)
 
         # set object user_data
         # self.user_data = user_data
-        return True
+        return self.user
 
     def is_profile_private(self):
         max_attempts = config.MAX_CONNECTION_ATTEMPTS
@@ -226,7 +144,7 @@ class Parser:
             # exit()
             # self.HandleError(
             #     step='Setting username.', exception_msg=e, dump_vars=True)
-            pass
+            print "Error in '{}'".format(sys._getframe().f_code.co_name)
         return username
 
     def get_user_status(self):
@@ -253,7 +171,7 @@ class Parser:
             # self.HandleError(
             # step='Determining if user is logged in from a mobile device.',
             # exception_msg=e, dump_vars=True)
-            pass
+            print "Error in '{}'".format(sys._getframe().f_code.co_name)
 
     def is_user_online(self):
         is_online = True
@@ -262,8 +180,7 @@ class Parser:
         try:
             # If no concrete message for user being offline. Thus, will assume
             # that if last seen time is not found, the user is Online
-            last_seen = self.get_user_last_seen_text(self)
-
+            last_seen = self.get_user_last_seen_text()
             if last_seen and last_seen != '':
                 is_online = False
                 if last_seen.lower() == 'online':
@@ -273,7 +190,7 @@ class Parser:
             # self.HandleError(
             # step="Determining user's online status.", exception_msg=e,
             # dump_vars=True)
-            pass
+            print "Error in '{}'".format(sys._getframe().f_code.co_name)
 
         return is_online
 
@@ -291,3 +208,188 @@ class Parser:
                 if last_seen:
                     last_seen = last_seen.text
         return last_seen
+
+    def generate_user_last_seen_line(self):
+        date_found = False
+        last_seen = self.get_user_last_seen_text()
+        if last_seen and last_seen != '':
+            last_seen = last_seen.replace('last seen ', '')
+
+            if ('am' in last_seen) or ('pm' in last_seen):
+                # Set timedelta according to daylight savings time
+                if time.localtime().tm_isdst == 1:
+                    hours_delta = 1
+                    time_delta = timedelta(hours=hours_delta)
+                else:
+                    hours_delta = 2
+                    time_delta = timedelta(hours=hours_delta)
+
+                for c in last_seen[:last_seen.find('at')]:
+                    if c.isdigit():
+                        date_found = True
+                        break
+                if date_found:
+                    try:
+                        date_time = datetime.strptime(
+                            last_seen, "%d %B at %I:%M %p")
+                        # By default year is 1900 and if time 00.41, minus delta it gets year
+                        # 1899 and raises an error
+                        date_time = date_time.replace(
+                            year=datetime.now().year)
+                        date_time = date_time - time_delta
+                        self.user["last_visit"] = date_time.strftime(
+                            "last seen on %B %d at %H:%M")
+                    except Exception as e:
+                        # self.HandleError(
+                        # step="Parsing date/time in last_seen.",
+                        # exception_msg=e, dump_vars=True)
+                        print "Error in '{}'".format(sys._getframe().f_code.co_name)
+                else:
+                    try:
+                        date_time = datetime.strptime(
+                            last_seen[last_seen.find('at'):], "at %I:%M %p")
+                        # By default year is 1900 and if time 00.41, minus delta it gets year
+                        # 1899 and raises an error
+                        date_time = date_time.replace(
+                            year=datetime.now().year)
+                        date_time = date_time - time_delta
+                        self.user["last_visit"] = 'last seen {}'.format(
+                            date_time.strftime(
+                                last_seen[:last_seen.find('at')] +
+                                "at %H:%M")
+                        )
+                        if (('yesterday' in last_seen) and
+                                (datetime.now().hour - hours_delta < 0)):
+                            self.user["last_visit"] = user_data[
+                                'last_visit'].replace('yesterday', 'today')
+                        elif (('yesterday' in last_seen) and
+                              (datetime.now().hour - hours_delta >= 0) and
+                                (date_time.hour + hours_delta >= 24)):
+                            self.user["last_visit"] = self.user["last_visit"].replace(
+                                'yesterday',
+                                'two days ago')
+                        elif (('today' in last_seen) and
+                              (date_time.hour + hours_delta >= 24)):
+                            self.user["last_visit"] = self.user["last_visit"].replace(
+                                'today', 'yesterday')
+                    except Exception as e:
+                        # self.HandleError(
+                        # step="Parsing time in last_seen",
+                        # exception_msg=e, dump_vars=True)
+                        print "Error in '{}'".format(sys._getframe().f_code.co_name)
+
+            elif last_seen.lower() == 'online':
+                self.user["last_visit"] = 'Online'
+
+            else:  # print raw last_seen data
+                # +' That is raw data!'
+                self.user["last_visit"] = 'last seen ' + last_seen
+        else:
+            self.user["last_visit"] = 'Online'
+
+        if self.user["mobile_version"]:
+            self.user["last_visit"] += ' [Mobile]'
+
+    def get_user_secondary_data(self):
+        secondary_data = {}
+        try:
+            secondary_data.update(self.get_user_additional_info())
+            secondary_data.update(self.get_user_extra_data())
+            secondary_data["number_of_wallposts"] = self.get_user_number_of_wallposts()
+            secondary_data["photo"] = self.get_user_profile_photo_link()
+        except Exception as e:
+            # self.vk_logger.logger.error(
+            #     "Got into an error in secondary data fetching and parsing." +
+            #     "ERR: {}".format(e))
+            # self.HandleError(
+            # step=current_step, exception_msg=e, dump_vars=True,
+            # debug_msg=current_step)
+            print "Error in '{}'".format(sys._getframe().f_code.co_name)
+        return secondary_data
+
+    def get_user_additional_info(self):
+        # self.vk_logger.logger.debug("Parsing 'pinfo_row'")
+        additional_info = {}
+        short_profile_info = []
+        for item in self.soup.findAll(class_='miniblock'):
+            text = item.text
+            if ':' in text:
+                short_profile_info.append(text)
+
+        # self.vk_logger.logger.debug("Saving parsed data to 'user' instance")
+        for info_item in short_profile_info:
+            item_title, item_value = info_item.split(":")
+            item_title = item_title.lower().replace(" ", "_").strip()
+            additional_info[item_title] = item_value
+
+        return additional_info
+
+    def get_user_extra_data(self):
+        # self.vk_logger.logger.debug(
+        #     "Getting extra data (e.g. number of photos/communities)")
+        data = {}
+        extra_data = self.soup.findAll(class_='profile_menu')
+        if extra_data:
+            extra_data_list = []
+            tmp_list = []
+            for el in extra_data:
+                for item in el.findAll(class_='pm_item'):
+                    item = item.text.lower()
+                    if 'show more' not in item:
+                        extra_data_list.append(item)
+
+        # self.vk_logger.logger.debug(
+        #     "Parsing extra data (e.g. number of photos/communities)")
+        for item in extra_data_list:
+            item_parts = item.split(' ')
+            key = ''
+            value = ''
+            for part in item_parts:
+                if part.isdigit():
+                    value = part
+                else:
+                    key += part + '_'
+            key = key.replace('_', ' ').rstrip().replace(' ', '_')
+            key = key.lower().replace(" ", "_").strip()
+            # self.secondary_data_keys_list.append(key)
+            # user_data[key] = value
+            data[key] = value
+
+        return data
+
+    def get_user_number_of_wallposts(self):
+        # self.vk_logger.logger.debug("Getting number of wall posts")
+        wallposts_number = -1
+        all_slim_headers = self.soup.findAll(class_='slim_header')
+        if len(all_slim_headers) > 0:
+            for item in all_slim_headers:
+                if 'post' in item.text:
+                    number_of_wallposts = item.text.split()[0]
+                    # number_of_wallposts = number_of_wallposts.encode(
+                    #     'ascii', 'ignore')
+                    # clear number from punctuation
+                    # table = string.maketrans("", "")
+                    # number_of_wallposts = number_of_wallposts.translate(
+                    #     table, string.punctuation)
+                    if str(number_of_wallposts).isdigit():
+                        wallposts_number = number_of_wallposts
+                        # self.secondary_data_keys_list.append(
+                        #     'number_of_wallposts')
+                    else:
+                        break
+        return wallposts_number
+
+    def get_user_profile_photo_link(self):
+        # self.vk_logger.logger.debug("Getting link to profile photo.")
+        photo_link = None
+        short_profile = self.soup.find(id="mcont")
+        if short_profile:
+            short_profile = short_profile.find(class_='owner_panel')
+            if short_profile:
+                photo_tag = short_profile.find('a')
+                if photo_tag:
+                    photo_link = photo_tag.get('href')
+                    if photo_link:
+                        photo_link = urlparse.urljoin(self.url,
+                                                      photo_link)
+        return photo_link
