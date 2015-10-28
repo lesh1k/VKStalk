@@ -265,24 +265,6 @@ class VKStalk:
         return True
 
     def CookSoup(self):
-        # Return the soup obtained from scrapping the page or False if any
-        # error occured while connecting
-
-        # Target URLs for VK and Mobile VK
-        # self.raw_url = 'http://vk.com'
-        # self.url = self.raw_url + '/'
-        # url_mobile='http://m.vk.com/'
-
-        # generate user specific URLs
-        # self.vk_logger.logger.debug('Generating URLs')
-
-        # if self.user.id.isdigit():
-        #     self.url += 'id' + self.user_id
-        # url_mobile += 'id' + self.user_id
-        # else:
-        #     self.url += self.user_id
-        # url_mobile += self.user_id
-
         # requesting the page
         self.vk_logger.logger.debug('Fetching HTML page')
 
@@ -774,9 +756,9 @@ class VKStalk:
     def SingleRequest(self):
         # ConsoleLog('Fetching user data...')
         self.vk_logger.logger.debug('Start single request')
-        if self.CookSoup() == False:
+        if self.CookSoup() is False:
             return False
-        if self.GetUserData() == False:
+        if self.GetUserData() is False:
             return False
 
         clear_screen()

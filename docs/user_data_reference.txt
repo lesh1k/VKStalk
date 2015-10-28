@@ -1,0 +1,24 @@
+# self.vk_logger.logger.debug("Initializing user_data with default values")
+# Initialize user_data dictionary with default values
+# user_data = {}
+# Primary data
+# user_data['name'] = '_not_found'
+# user_data['status'] = '_not_found'
+# user_data['online'] = '_not_found'
+# user_data['last_visit'] = '_not_found'
+# user_data['mobile_version'] = False
+# Secondary data
+# user_data['skype'] = '_not_found'
+# user_data['site'] = '_not_found'
+# user_data['twitter'] = '_not_found'
+# user_data['instagram'] = '_not_found'
+# user_data['facebook'] = '_not_found'
+# user_data['phone'] = '_not_found'
+# user_data['university'] = '_not_found'
+# user_data['photo'] = '_not_found'
+# user_data['birthday'] = '_not_found'
+# user_data['hometown'] = '_not_found'
+# user_data['current_city'] = '_not_found'
+# other secondary data entries are added during runtime. These depend
+# on the profile of the user.
+# self.secondary_data_keys_list = []
