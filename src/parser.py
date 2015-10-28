@@ -211,6 +211,7 @@ class Parser:
 
     def generate_user_last_seen_line(self):
         date_found = False
+        last_seen_line = None
         last_seen = self.get_user_last_seen_text()
         if last_seen and last_seen != '':
             last_seen = last_seen.replace('last seen ', '')
@@ -237,7 +238,7 @@ class Parser:
                         date_time = date_time.replace(
                             year=datetime.now().year)
                         date_time = date_time - time_delta
-                        self.user["last_visit"] = date_time.strftime(
+                        last_seen_line = date_time.strftime(
                             "last seen on %B %d at %H:%M")
                     except Exception as e:
                         # self.HandleError(
@@ -253,24 +254,24 @@ class Parser:
                         date_time = date_time.replace(
                             year=datetime.now().year)
                         date_time = date_time - time_delta
-                        self.user["last_visit"] = 'last seen {}'.format(
+                        last_seen_line = 'last seen {}'.format(
                             date_time.strftime(
                                 last_seen[:last_seen.find('at')] +
                                 "at %H:%M")
                         )
                         if (('yesterday' in last_seen) and
                                 (datetime.now().hour - hours_delta < 0)):
-                            self.user["last_visit"] = user_data[
+                            last_seen_line = user_data[
                                 'last_visit'].replace('yesterday', 'today')
                         elif (('yesterday' in last_seen) and
                               (datetime.now().hour - hours_delta >= 0) and
                                 (date_time.hour + hours_delta >= 24)):
-                            self.user["last_visit"] = self.user["last_visit"].replace(
+                            last_seen_line = last_seen_line.replace(
                                 'yesterday',
                                 'two days ago')
                         elif (('today' in last_seen) and
                               (date_time.hour + hours_delta >= 24)):
-                            self.user["last_visit"] = self.user["last_visit"].replace(
+                            last_seen_line = last_seen_line.replace(
                                 'today', 'yesterday')
                     except Exception as e:
                         # self.HandleError(
@@ -279,16 +280,19 @@ class Parser:
                         print "Error in '{}'".format(sys._getframe().f_code.co_name)
 
             elif last_seen.lower() == 'online':
-                self.user["last_visit"] = 'Online'
+                last_seen_line = 'Online'
 
             else:  # print raw last_seen data
                 # +' That is raw data!'
-                self.user["last_visit"] = 'last seen ' + last_seen
+                last_seen_line = 'last seen ' + last_seen
         else:
-            self.user["last_visit"] = 'Online'
+            last_seen_line = 'Online'
 
         if self.user["mobile_version"]:
-            self.user["last_visit"] += ' [Mobile]'
+            last_seen_line += ' [Mobile]'
+
+        self.user["last_visit"] = last_seen_line
+        return last_seen_line
 
     def get_user_secondary_data(self):
         secondary_data = {}
