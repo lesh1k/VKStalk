@@ -22,6 +22,7 @@ class Parser:
     def __init__(self, url):
         self.user = {}
         self.url = url
+        self.cook_soup()
 
     def cook_soup(self):
         if self.fetch_html():
