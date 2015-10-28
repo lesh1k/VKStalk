@@ -15,7 +15,7 @@ from user import User
 import config
 import urlparse
 import sys
-# from utils import clear_screen, normalize_unicode
+from utils import clear_screen
 
 
 class Parser:
@@ -24,54 +24,28 @@ class Parser:
         self.url = url
 
     def cook_soup(self):
-        # Return the soup obtained from scrapping the page or False if any
-        # error occured while connecting
-
-        # set soup
-        # self.vk_logger.logger.debug('Cooking soup')
         if self.fetch_html():
             self.soup = BeautifulSoup(self.html)
         else:
             return False
-        # self.vk_logger.logger.debug('Cooking soup finished')
 
         return True
 
     def fetch_html(self):
-        # requesting the page
-        # self.vk_logger.logger.debug('Fetching HTML page')
-
         try:
             cHandle = urllib2.urlopen(self.url, timeout=20)
             self.html = cHandle.read()
             cHandle.close()
         except Exception as e:
-            # self.vk_logger.logger.error(
-                # "Could not fetch HTML page. Retrying in 7 seconds...")
-            # self.vk_logger.logger.debug("Restarting request")
-            # self.HandleError(
-            #     step='Fetching HTML page.',
-            #     exception_msg=e,
-            #     dump_vars=True,
-            #     console_msg='Could not fetch HTML page. Retrying in 7 seconds...',
-            #     sleep=7,
-            #     debug_msg='Restarting request.'
-            # )
             print "Error in '{}'".format(sys._getframe().f_code.co_name)
 
         return True
 
     def get_user_data(self):
-        # Check if the profile is not hidden. Page was deleted or does not
-        # exist
         if self.is_profile_private():
-            # self.SendMail(
-            # mail_type='error', msg="Execution terminated! Private profile.
-            # Access forbidden.")
             exit("Private profile. Access forbidden")
 
-        #:Data fetching
-        # self.vk_logger.logger.debug("Start data fetching")
+        # :Data fetching
         # :Name
         self.user["name"] = self.get_user_name()
 
@@ -83,39 +57,21 @@ class Parser:
 
         # :Online OR not [last seen time]
         self.user["online"] = self.is_user_online()
+        self.user["last_visit"] = self.generate_user_last_seen_line()
 
         # :Secondary data fectching
         user_secondary_data = self.get_user_secondary_data()
         self.user.update(user_secondary_data)
 
-        # set object user_data
-        # self.user_data = user_data
         return self.user
 
     def is_profile_private(self):
         max_attempts = config.MAX_CONNECTION_ATTEMPTS
         for attempt in xrange(1, max_attempts + 1):
-            # self.vk_logger.logger.debug(
-            #     "Checking if the profile exists and is accessible." +
-            #     "Attempt ({0} of {1})".format(attempt, max_attempts))
             if ((self.soup.find('div', {'class': 'service_msg_null'}))
                     or ('This user deleted their page. Information unavailable.' in self.soup.text)
                     or ('This page is either deleted or has not been created yet.' in self.soup.text)):
                 clear_screen()
-                # self.HandleError(
-                #     step='Verifying if profile is accessible. Attempt (' + str(
-                #         attempt + 1) + ' of ' + str(max_attempts) + ')',
-                #     exception_msg='Access forbidden. Profile PRIVATE or page does not exist.',
-                #     debug_msg='Access forbidden. Profile PRIVATE or page does not exist. Attempt (' + str(
-                #         attempt + 1) + ' of ' + str(max_attempts) + ')',
-                #     sleep=15,
-                #     console_msg=(
-                #         'Access forbidden. Profile PRIVATE or page does not exist.\nAttempt ('
-                #         + str(attempt + 1) + ' of ' +
-                #         str(max_attempts) + ').\nRetry in 15 seconds...\n'
-                #     )
-                # )
-                # ConsoleLog('Fetching user data...')
                 self.cook_soup()
                 profile_private = True
             else:
@@ -126,10 +82,8 @@ class Parser:
         return profile_private
 
     def get_user_name(self):
-        # self.vk_logger.logger.debug("Obtaining username")
         try:
             username = self.soup.html.head.title.text
-            # normalize_unicode(self.user)
             # for filename verification
             valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
 
@@ -140,10 +94,6 @@ class Parser:
             if username[-2:] == 'VK':
                 username = username[:-2].rstrip()
         except Exception as e:
-            # self.vk_logger.logger.error("Trouble getting username")
-            # exit()
-            # self.HandleError(
-            #     step='Setting username.', exception_msg=e, dump_vars=True)
             print "Error in '{}'".format(sys._getframe().f_code.co_name)
         return username
 
@@ -160,23 +110,15 @@ class Parser:
 
     def is_user_mobile(self):
         is_mobile = False
-        # self.vk_logger.logger.debug(
-        #     "Determining if user is logged in from a mobile device.")
         try:
-            # alt: self.soup.find('b',{'class':'lvi mlvi'})
             if self.soup.find(class_='mlvi') is not None:
                 is_mobile = True
             return is_mobile
         except Exception as e:
-            # self.HandleError(
-            # step='Determining if user is logged in from a mobile device.',
-            # exception_msg=e, dump_vars=True)
             print "Error in '{}'".format(sys._getframe().f_code.co_name)
 
     def is_user_online(self):
         is_online = True
-        # self.vk_logger.logger.debug(
-        #     "Obtaining info about user ONLINE status (online/offline)")
         try:
             # If no concrete message for user being offline. Thus, will assume
             # that if last seen time is not found, the user is Online
@@ -187,9 +129,6 @@ class Parser:
                     is_online = True
 
         except Exception as e:
-            # self.HandleError(
-            # step="Determining user's online status.", exception_msg=e,
-            # dump_vars=True)
             print "Error in '{}'".format(sys._getframe().f_code.co_name)
 
         return is_online
@@ -241,9 +180,6 @@ class Parser:
                         last_seen_line = date_time.strftime(
                             "last seen on %B %d at %H:%M")
                     except Exception as e:
-                        # self.HandleError(
-                        # step="Parsing date/time in last_seen.",
-                        # exception_msg=e, dump_vars=True)
                         print "Error in '{}'".format(sys._getframe().f_code.co_name)
                 else:
                     try:
@@ -274,9 +210,6 @@ class Parser:
                             last_seen_line = last_seen_line.replace(
                                 'today', 'yesterday')
                     except Exception as e:
-                        # self.HandleError(
-                        # step="Parsing time in last_seen",
-                        # exception_msg=e, dump_vars=True)
                         print "Error in '{}'".format(sys._getframe().f_code.co_name)
 
             elif last_seen.lower() == 'online':
@@ -291,7 +224,6 @@ class Parser:
         if self.user["mobile_version"]:
             last_seen_line += ' [Mobile]'
 
-        self.user["last_visit"] = last_seen_line
         return last_seen_line
 
     def get_user_secondary_data(self):
@@ -302,17 +234,10 @@ class Parser:
             secondary_data["number_of_wallposts"] = self.get_user_number_of_wallposts()
             secondary_data["photo"] = self.get_user_profile_photo_link()
         except Exception as e:
-            # self.vk_logger.logger.error(
-            #     "Got into an error in secondary data fetching and parsing." +
-            #     "ERR: {}".format(e))
-            # self.HandleError(
-            # step=current_step, exception_msg=e, dump_vars=True,
-            # debug_msg=current_step)
             print "Error in '{}'".format(sys._getframe().f_code.co_name)
         return secondary_data
 
     def get_user_additional_info(self):
-        # self.vk_logger.logger.debug("Parsing 'pinfo_row'")
         additional_info = {}
         short_profile_info = []
         for item in self.soup.findAll(class_='miniblock'):
@@ -320,7 +245,6 @@ class Parser:
             if ':' in text:
                 short_profile_info.append(text)
 
-        # self.vk_logger.logger.debug("Saving parsed data to 'user' instance")
         for info_item in short_profile_info:
             item_title, item_value = info_item.split(":")
             item_title = item_title.lower().replace(" ", "_").strip()
@@ -355,8 +279,6 @@ class Parser:
                     key += part + '_'
             key = key.replace('_', ' ').rstrip().replace(' ', '_')
             key = key.lower().replace(" ", "_").strip()
-            # self.secondary_data_keys_list.append(key)
-            # user_data[key] = value
             data[key] = value
 
         return data
@@ -369,16 +291,8 @@ class Parser:
             for item in all_slim_headers:
                 if 'post' in item.text:
                     number_of_wallposts = item.text.split()[0]
-                    # number_of_wallposts = number_of_wallposts.encode(
-                    #     'ascii', 'ignore')
-                    # clear number from punctuation
-                    # table = string.maketrans("", "")
-                    # number_of_wallposts = number_of_wallposts.translate(
-                    #     table, string.punctuation)
                     if str(number_of_wallposts).isdigit():
                         wallposts_number = number_of_wallposts
-                        # self.secondary_data_keys_list.append(
-                        #     'number_of_wallposts')
                     else:
                         break
         return wallposts_number
