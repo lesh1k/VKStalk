@@ -16,7 +16,7 @@ import config
 import urlparse
 import sys
 import pytz
-from utils import clear_screen
+from utils import clear_screen, get_all_digits_from_str
 
 
 class Parser:
@@ -173,14 +173,17 @@ class Parser:
                                 minute=last_seen_time.minute)
             elif 'ago' in last_seen:
                 dt = datetime.now()
-                last_seen_minutes_ago = get_all_digits_from_str(last_seen)
+                last_seen_minutes_ago = int(get_all_digits_from_str(last_seen))
                 dt = dt - timedelta(minutes=last_seen_minutes_ago)
             else:
                 dt = datetime.strptime(last_seen, "last seen %d %B at %I:%M %p")
 
             year = datetime.now().year
             dt = dt.replace(year=year)
-            dt = pytz.timezone(config.VK_TZ).localize(dt)
+            if 'ago' in last_seen:
+                dt = pytz.timezone(config.CLIENT_TZ).localize(dt)
+            else:
+                dt = pytz.timezone(config.VK_TZ).localize(dt)
             dt = dt.astimezone(pytz.timezone(config.CLIENT_TZ))
         except Exception as e:
             print "Error in '{}'".format(sys._getframe().f_code.co_name)

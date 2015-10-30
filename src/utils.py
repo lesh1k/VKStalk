@@ -33,6 +33,4 @@ def convert_to_snake_case(name):
 
 
 def get_all_digits_from_str(text):
-    all = string.maketrans('', '')
-    nodigs = all.translate(all, string.digits)
-    return text.translate(all, nodigs)
+    return ''.join([c for c in text if c.isdigit()])
