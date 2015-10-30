@@ -2,3 +2,4 @@ Data/
 venv/
 *.pyc
 data (beta)/
+secrets.py

@@ -9,8 +9,6 @@ class User:
         self.id = user_id
         self.name = None
         self.status = None
-        self.name = None
-        self.status = None
         self.online = None
         self.last_visit = None
         self.mobile_version = None

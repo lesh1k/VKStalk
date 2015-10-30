@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import os
+from secrets import *
 
 VERSION = "4.0.1"  # this should be extracted when packaging the app
 

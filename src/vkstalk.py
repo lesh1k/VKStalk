@@ -13,11 +13,13 @@ from datetime import datetime, timedelta
 from pprint import pprint
 from logger import Logger, Summarize
 import smtplib  # for mail sending
-from user import User
+from user import User as UserObj
 import config
 import urlparse
+import sys
 from utils import clear_screen, normalize_unicode
 from parser import Parser
+from models import *
 
 
 class VKStalk:
@@ -51,7 +53,7 @@ class VKStalk:
     def __init__(self, user_id, log_level=21, email_notifications=False, email=''):
         self.birth = datetime.now().strftime(config.DATETIME_FORMAT)
 
-        self.user = User(user_id)
+        self.user = UserObj(user_id)
         self.prev_user = None
 
         self.vk_logger = Logger(user_id, 10)
@@ -268,9 +270,33 @@ class VKStalk:
     def populate_user(self):
         p = Parser(self.user.url)
         user_data = p.get_user_data()
+        self.save_data_to_db(user_data)
 
         for key in user_data.keys():
             setattr(self.user, key, user_data[key])
+
+    def save_data_to_db(self, user_data):
+        session = Session()
+
+        user = session.query(User).filter_by(vk_id=self.user.id).first()
+        if not user:
+            user = User(vk_id=self.user.id)
+            session.add(user)
+
+        if not user.data:
+            user.data = UserData()
+        # import ipdb; ipdb.set_trace()
+        try:
+            keys = [i for i in user_data.keys() if i in user.data.__dict__.keys()]
+            for key in keys:
+                setattr(user.data, key, user_data[key])
+        except:
+            print "Error in '{}'".format(sys._getframe().f_code.co_name)
+            print "Error setting key:value - {0}:{1}".format(key. user_data[key])
+            session.rollback()
+        finally:
+            session.commit()
+            session.close()
 
     ######Logging part######
     def ShowWriteInfo(self):
