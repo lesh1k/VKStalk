@@ -15,6 +15,7 @@ from user import User
 import config
 import urlparse
 import sys
+import pytz
 from utils import clear_screen
 
 
@@ -58,7 +59,9 @@ class Parser:
 
         # :Online OR not [last seen time]
         self.user["online"] = self.is_user_online()
-        self.user["last_visit"] = self.generate_user_last_seen_line()
+        self.user["last_visit"] = self.get_last_seen_datetime()
+        self.user["last_visit_text"] = self.generate_user_last_seen_line(
+            self.user["last_visit"])
 
         # :Secondary data fectching
         user_secondary_data = self.get_user_secondary_data()
@@ -107,6 +110,8 @@ class Parser:
             status = self.soup.find('div', {'class': 'pp_status'})
             if status:
                 status_text = status.text
+            else:
+                status_text = None
         return status_text
 
     def is_user_mobile(self):
@@ -149,77 +154,45 @@ class Parser:
                     last_seen = last_seen.text
         return last_seen
 
-    def generate_user_last_seen_line(self):
-        date_found = False
-        last_seen_line = None
-        last_seen = self.get_user_last_seen_text()
-        if last_seen and last_seen != '':
-            last_seen = last_seen.replace('last seen ', '')
+    def get_last_seen_datetime(self):
+        try:
+            last_seen = self.get_user_last_seen_text()
 
-            if ('am' in last_seen) or ('pm' in last_seen):
-                # Set timedelta according to daylight savings time
-                if time.localtime().tm_isdst == 1:
-                    hours_delta = 1
-                    time_delta = timedelta(hours=hours_delta)
+            if not last_seen or last_seen.lower() == "online":
+                return None
+
+            if 'today' in last_seen or 'yesterday' in last_seen:
+                if 'today' in last_seen:
+                    dt = datetime.today()
                 else:
-                    hours_delta = 2
-                    time_delta = timedelta(hours=hours_delta)
+                    dt = datetime.fromordinal(datetime.today().toordinal()-1)
+                last_seen_time = datetime.strptime(
+                    last_seen[last_seen.index("at"):],
+                    "at %I:%M %p")
+                dt = dt.replace(hour=last_seen_time.hour,
+                                minute=last_seen_time.minute)
+            elif 'ago' in last_seen:
+                dt = datetime.now()
+                last_seen_minutes_ago = get_all_digits_from_str(last_seen)
+                dt = dt - timedelta(minutes=last_seen_minutes_ago)
+            else:
+                dt = datetime.strptime(last_seen, "last seen %d %B at %I:%M %p")
 
-                for c in last_seen[:last_seen.find('at')]:
-                    if c.isdigit():
-                        date_found = True
-                        break
-                if date_found:
-                    try:
-                        date_time = datetime.strptime(
-                            last_seen, "%d %B at %I:%M %p")
-                        # By default year is 1900 and if time 00.41, minus delta it gets year
-                        # 1899 and raises an error
-                        date_time = date_time.replace(
-                            year=datetime.now().year)
-                        date_time = date_time - time_delta
-                        last_seen_line = date_time.strftime(
-                            "last seen on %B %d at %H:%M")
-                    except Exception as e:
-                        print "Error in '{}'".format(sys._getframe().f_code.co_name)
-                else:
-                    try:
-                        date_time = datetime.strptime(
-                            last_seen[last_seen.find('at'):], "at %I:%M %p")
-                        # By default year is 1900 and if time 00.41, minus delta it gets year
-                        # 1899 and raises an error
-                        date_time = date_time.replace(
-                            year=datetime.now().year)
-                        date_time = date_time - time_delta
-                        last_seen_line = 'last seen {}'.format(
-                            date_time.strftime(
-                                last_seen[:last_seen.find('at')] +
-                                "at %H:%M")
-                        )
-                        if (('yesterday' in last_seen) and
-                                (datetime.now().hour - hours_delta < 0)):
-                            last_seen_line = last_seen_line.replace('yesterday', 'today')
-                        elif (('yesterday' in last_seen) and
-                              (datetime.now().hour - hours_delta >= 0) and
-                                (date_time.hour + hours_delta >= 24)):
-                            last_seen_line = last_seen_line.replace(
-                                'yesterday',
-                                'two days ago')
-                        elif (('today' in last_seen) and
-                              (date_time.hour + hours_delta >= 24)):
-                            last_seen_line = last_seen_line.replace(
-                                'today', 'yesterday')
-                    except Exception as e:
-                        print "Error in '{}'".format(sys._getframe().f_code.co_name)
+            year = datetime.now().year
+            dt = dt.replace(year=year)
+            dt = pytz.timezone(config.VK_TZ).localize(dt)
+            dt = dt.astimezone(pytz.timezone(config.CLIENT_TZ))
+        except Exception as e:
+            print "Error in '{}'".format(sys._getframe().f_code.co_name)
+        return dt
 
-            elif last_seen.lower() == 'online':
-                last_seen_line = 'Online'
-
-            else:  # print raw last_seen data
-                # +' That is raw data!'
-                last_seen_line = 'last seen ' + last_seen
-        else:
+    def generate_user_last_seen_line(self, last_seen_datetime):
+        if not last_seen_datetime:
             last_seen_line = 'Online'
+        else:
+            # TBD check that it is actually a datetime
+            last_seen_line = last_seen_datetime.strftime(
+                'last seen on %B %d at %H:%M')
 
         if self.user["mobile_version"]:
             last_seen_line += ' [Mobile]'

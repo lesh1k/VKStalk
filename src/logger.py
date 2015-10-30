@@ -54,35 +54,35 @@ class Logger:
         # console_handler.setLevel(USER_ACTIVITY)
         self.console_logger.addHandler(console_handler)
 
-        self.activity_log_file = os.path.join(
-            config.USER_ACTIVITY_LOGS_PATH.format(self.user_id),
-            "user_" + self.user_id + ".log")
-        # activity_handler = UserActivityTimedRotatingFileHandler(
-        #     self.activity_log_file, when="midnight")
-        activity_handler = logging.handlers.TimedRotatingFileHandler(
-            self.activity_log_file,
-            when=config.ACTIVITY_LOGS_ROTATE_WHEN,
-            interval=config.ACTIVITY_LOGS_ROTATE_INTERVAL)
-        activity_formatter = logging.Formatter("%(message)s")
-        activity_handler.setFormatter(activity_formatter)
-        # activity_handler.setLevel(USER_ACTIVITY)
-        self.activity_logger.addHandler(activity_handler)
+        # self.activity_log_file = os.path.join(
+        #     config.USER_ACTIVITY_LOGS_PATH.format(self.user_id),
+        #     "user_" + self.user_id + ".log")
+        # # activity_handler = UserActivityTimedRotatingFileHandler(
+        # #     self.activity_log_file, when="midnight")
+        # activity_handler = logging.handlers.TimedRotatingFileHandler(
+        #     self.activity_log_file,
+        #     when=config.ACTIVITY_LOGS_ROTATE_WHEN,
+        #     interval=config.ACTIVITY_LOGS_ROTATE_INTERVAL)
+        # activity_formatter = logging.Formatter("%(message)s")
+        # activity_handler.setFormatter(activity_formatter)
+        # # activity_handler.setLevel(USER_ACTIVITY)
+        # self.activity_logger.addHandler(activity_handler)
 
-        debug_log_file = os.path.join(
-            config.LOGS_PATH.format(self.user_id), self.user_id)
-        debug_handler = logging.handlers.TimedRotatingFileHandler(
-            debug_log_file,
-            when=config.LOGS_ROTATE_WHEN,
-            interval=config.LOGS_ROTATE_INTERVAL)
-        debug_formatter = logging.Formatter(
-            "%(levelname)s :: %(asctime)s :: %(message)s",
-            "[Date: %d-%m-%Y. Time: %H:%M:%S]")
-        debug_handler.setFormatter(debug_formatter)
+        # debug_log_file = os.path.join(
+        #     config.LOGS_PATH.format(self.user_id), self.user_id)
+        # debug_handler = logging.handlers.TimedRotatingFileHandler(
+        #     debug_log_file,
+        #     when=config.LOGS_ROTATE_WHEN,
+        #     interval=config.LOGS_ROTATE_INTERVAL)
+        # debug_formatter = logging.Formatter(
+        #     "%(levelname)s :: %(asctime)s :: %(message)s",
+        #     "[Date: %d-%m-%Y. Time: %H:%M:%S]")
+        # debug_handler.setFormatter(debug_formatter)
         # debug_handler.setLevel(log_level)
 
         # self.logger.addHandler(console_handler)
         # self.logger.addHandler(activity_handler)
-        self.logger.addHandler(debug_handler)
+        # self.logger.addHandler(debug_handler)
 
     def make_log_dirs(self):
         # Makes directories for all log types, according to config.py

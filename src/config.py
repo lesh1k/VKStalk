@@ -58,3 +58,6 @@ REPORT_HOURS = [10]  # hours
 MAX_FILES_PER_REPORT = 8
 
 MAX_CONNECTION_ATTEMPTS = 10
+
+VK_TZ = "Europe/Moscow"
+CLIENT_TZ = "Europe/Chisinau"

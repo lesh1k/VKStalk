@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 import os
 import unicodedata
+import re
+import string
 
 
 def clear_screen():
@@ -23,3 +25,14 @@ def normalize_unicode(user):
 def print_obj(obj):
     for attr, val in obj.__dict__.iteritems():
         print "{0}: {1}".format(attr, val)
+
+
+def convert_to_snake_case(name):
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+def get_all_digits_from_str(text):
+    all = string.maketrans('', '')
+    nodigs = all.translate(all, string.digits)
+    return text.translate(all, nodigs)
