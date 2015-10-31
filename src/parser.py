@@ -62,6 +62,9 @@ class Parser:
         self.user["last_visit"] = self.get_last_seen_datetime()
         self.user["last_visit_text"] = self.generate_user_last_seen_line(
             self.user["last_visit"])
+        if 'ago' in self.user["last_visit_text"]:
+            self.user["last_visit_lt_an_hour_ago"] = True
+            self.user["last_visit"] = None
 
         # :Secondary data fectching
         user_secondary_data = self.get_user_secondary_data()
@@ -179,7 +182,7 @@ class Parser:
                 dt = datetime.strptime(last_seen, "last seen %d %B at %I:%M %p")
 
             year = datetime.now().year
-            dt = dt.replace(year=year)
+            dt = dt.replace(year=year, second=0, microsecond=0)
             if 'ago' in last_seen:
                 dt = pytz.timezone(config.CLIENT_TZ).localize(dt)
             else:
@@ -193,9 +196,23 @@ class Parser:
         if not last_seen_datetime:
             last_seen_line = 'Online'
         else:
-            # TBD check that it is actually a datetime
-            last_seen_line = last_seen_datetime.strftime(
-                'last seen on %B %d at %H:%M')
+            # TBD check that last_seen_datetime is actually a datetime
+            now = pytz.timezone(config.CLIENT_TZ).localize(datetime.now())
+            delta_datetime = now - last_seen_datetime
+            delta_days = (now.date() - last_seen_datetime.date()).days
+            minutes_ago = delta_datetime.seconds / 60
+
+            if minutes_ago < 60:
+                last_seen_line = 'last seen {} minutes ago'.format(minutes_ago)
+            elif delta_days == 0:
+                last_seen_line = last_seen_datetime.strftime(
+                    'last seen today at %H:%M')
+            elif delta_days == 1:
+                last_seen_line = last_seen_datetime.strftime(
+                    'last seen yesterday at %H:%M')
+            else:
+                last_seen_line = last_seen_datetime.strftime(
+                    'last seen on %B %d at %H:%M')
 
         if self.user["mobile_version"]:
             last_seen_line += ' [Mobile]'

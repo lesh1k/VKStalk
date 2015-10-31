@@ -36,7 +36,6 @@ class VKStalk:
             user.data = UserData()
         self.user = user
 
-
         self.vk_logger = Logger(user_id, 10)
 
         self.version = "| VKStalk ver. {} |".format(config.VERSION)
@@ -82,8 +81,10 @@ class VKStalk:
 
         # Common log to file
         self.log = "{0} -- {1}\nStatus: {2}\n\n".format(self.user.data.name,
-                                                        self.user.activity_logs[-1].last_visit_text,
-                                                        self.user.activity_logs[-1].status
+                                                        self.user.activity_logs[
+                                                            -1].last_visit_text,
+                                                        self.user.activity_logs[
+                                                            -1].status
                                                         )
         # Looking for changes in secondary data
         # try:
@@ -248,16 +249,42 @@ class VKStalk:
 
     def save_data_to_db(self, user_data):
         try:
-            keys = [i for i in user_data.keys() if i in self.user.data.__dict__.keys()]
+            changes = {
+                'data': {},
+                'activity_log': {},
+            }
+
+            keys = [i for i in user_data.keys(
+            ) if i in self.user.data.__dict__.keys()]
             for key in keys:
-                setattr(self.user.data, key, user_data[key])
+                old_val = getattr(self.user.data, key)
+                new_val = user_data[key]
+                if (type(old_val) != type(new_val) and unicode(old_val) != unicode(new_val)) or (old_val != new_val and type(old_val) == type(new_val)):
+                    changes['data'][key] = {
+                        'old': old_val,
+                        'new': new_val,
+                    }
+                    setattr(self.user.data, key, user_data[key])
 
             activity_log = UserActivityLog()
-            keys = [i for i in user_data.keys() if i in UserActivityLog.__dict__.keys() and "__" not in i]
+            keys = [i for i in user_data.keys(
+            ) if i in UserActivityLog.__dict__.keys() and "__" not in i]
             for key in keys:
+                if len(self.user.activity_logs):
+                    old_val = getattr(self.user.activity_logs[-1], key)
+                    new_val = user_data[key]
+
+                    if (type(old_val) != type(new_val) and unicode(old_val) != unicode(new_val)) or (old_val != new_val and type(old_val) == type(new_val)):
+                        changes['activity_log'][key] = {
+                            'old': old_val,
+                            'new': new_val,
+                        }
+                else:
+                    changes['activity_log'] = {"First launch placeholder": True}
                 setattr(activity_log, key, user_data[key])
-            self.user.activity_logs.append(activity_log)
-            self.logs_counter += 1
+            if changes['activity_log']:
+                self.user.activity_logs.append(activity_log)
+                self.logs_counter += 1
         except:
             raise
             print "Error in '{}'".format(sys._getframe().f_code.co_name)
