@@ -283,8 +283,9 @@ class VKStalk:
                     changes['activity_log'] = {"First launch placeholder": True}
                 setattr(activity_log, key, user_data[key])
             if changes['activity_log']:
-                self.user.activity_logs.append(activity_log)
-                self.logs_counter += 1
+                if "last_visit_text" not in changes['activity_log'] or "last_visit_lt_an_hour_ago" in changes['activity_log']:
+                    self.user.activity_logs.append(activity_log)
+                    self.logs_counter += 1
         except:
             raise
             print "Error in '{}'".format(sys._getframe().f_code.co_name)

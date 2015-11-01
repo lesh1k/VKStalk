@@ -62,6 +62,7 @@ class Parser:
         self.user["last_visit"] = self.get_last_seen_datetime()
         self.user["last_visit_text"] = self.generate_user_last_seen_line(
             self.user["last_visit"])
+        self.user["last_visit_lt_an_hour_ago"] = False
         if 'ago' in self.user["last_visit_text"]:
             self.user["last_visit_lt_an_hour_ago"] = True
             self.user["last_visit"] = None
