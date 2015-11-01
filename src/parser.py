@@ -225,7 +225,7 @@ class Parser:
         try:
             secondary_data.update(self.get_user_additional_info())
             secondary_data.update(self.get_user_extra_data())
-            secondary_data["number_of_wallposts"] = self.get_user_number_of_wallposts()
+            secondary_data["wallposts"] = self.get_user_number_of_wallposts()
             secondary_data["photo"] = self.get_user_profile_photo_link()
         except Exception as e:
             print "Error in '{}'".format(sys._getframe().f_code.co_name)
@@ -234,10 +234,20 @@ class Parser:
     def get_user_additional_info(self):
         additional_info = {}
         short_profile_info = []
-        for item in self.soup.findAll(class_='miniblock'):
+        for item in self.soup.findAll(class_='pinfo_row'):
             text = item.text
             if ':' in text:
                 short_profile_info.append(text)
+
+        for info_item in short_profile_info:
+            item_title, item_value = info_item.split(":")
+            item_title = item_title.lower().replace(" ", "_").strip()
+            additional_info[item_title] = item_value
+
+        for i, item in enumerate(self.soup.findAll(class_='pp_info')):
+            text = item.text
+            tmp = "Info {0}: {1}".format(i+1, text)
+            short_profile_info.append(tmp)
 
         for info_item in short_profile_info:
             item_title, item_value = info_item.split(":")
@@ -284,7 +294,7 @@ class Parser:
         if len(all_slim_headers) > 0:
             for item in all_slim_headers:
                 if 'post' in item.text:
-                    number_of_wallposts = item.text.split()[0]
+                    number_of_wallposts = get_all_digits_from_str(item.text)
                     if str(number_of_wallposts).isdigit():
                         wallposts_number = number_of_wallposts
                     else:

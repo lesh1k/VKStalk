@@ -129,7 +129,16 @@ class VKStalk:
         # Generating a timestamp and adding it to the log string
         self.log_time = datetime.strftime(
             datetime.now(), '>>>Date: %d-%m-%Y. Time: %H:%M:%S\n')
-        self.log = self.log_time + self.log.rstrip() + '\n\n'
+        self.log = self.log_time + self.log.rstrip()
+        if self.changes['data']:
+            updates = ""
+            for key in self.changes['data']:
+                title = key.replace("_", " ").capitalize()
+                old_val = self.changes['data'][key]['old']
+                new_val = self.changes['data'][key]['new']
+                updates += "\n{0}: {1} => {2}".format(title, old_val, new_val)
+            self.log += updates
+        self.log += '\n\n'
 
         # first log to file
         # filename = time.strftime(
@@ -283,7 +292,7 @@ class VKStalk:
                     changes['activity_log'] = {"First launch placeholder": True}
                 setattr(activity_log, key, user_data[key])
             if changes['activity_log']:
-                if "last_visit_text" not in changes['activity_log'] or "last_visit_lt_an_hour_ago" in changes['activity_log']:
+                if user_data['online'] or "last_visit_text" not in changes['activity_log'] or "last_visit_lt_an_hour_ago" in changes['activity_log']:
                     self.user.activity_logs.append(activity_log)
                     self.logs_counter += 1
         except:
@@ -293,6 +302,7 @@ class VKStalk:
             self.db_session.rollback()
             print "Session changes were rolled back."
         finally:
+            self.changes = changes
             self.db_session.commit()
             # self.db_session.close()
 

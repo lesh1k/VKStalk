@@ -57,13 +57,17 @@ class UserData(BaseMixin, Base):
     skype = Column(String)
     phone = Column(String)
     university = Column(String)
-    current_city = Column(String)
+    studied_at = Column(String)
+    wallposts = Column(Integer)
     photos = Column(Integer)
     videos = Column(Integer)
     followers = Column(Integer)
     communities = Column(Integer)
     noteworthy_pages = Column(Integer)
-    # wallposts = Column(Integer)
+    current_city = Column(String)
+    info_1 = Column(String)
+    info_2 = Column(String)
+    info_3 = Column(String)
 
 
 class UserActivityLog(BaseMixin, Base):
