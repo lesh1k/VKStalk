@@ -41,6 +41,7 @@ class Parser:
             cHandle.close()
         except Exception as e:
             print "Error in '{}'".format(sys._getframe().f_code.co_name)
+            import ipdb; ipdb.set_trace()
 
         return html
 
@@ -91,15 +92,7 @@ class Parser:
     def get_user_name(self):
         try:
             username = self.soup.html.head.title.text
-            # for filename verification
-            valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
-
-            # Sanitize user name
-            for c in username:
-                if c not in valid_chars:
-                    username = username.replace(c, '')
-            if username[-2:] == 'VK':
-                username = username[:-2].rstrip()
+            username = username.rstrip(" VK")
         except Exception as e:
             print "Error in '{}'".format(sys._getframe().f_code.co_name)
         return username
@@ -127,10 +120,9 @@ class Parser:
             print "Error in '{}'".format(sys._getframe().f_code.co_name)
 
     def is_user_online(self):
+        # Assuming that the user is online, unless last_seen text is found
         is_online = True
         try:
-            # If no concrete message for user being offline. Thus, will assume
-            # that if last seen time is not found, the user is Online
             last_seen = self.get_user_last_seen_text()
             if last_seen and last_seen != '':
                 is_online = False
