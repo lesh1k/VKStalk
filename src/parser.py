@@ -23,10 +23,11 @@ class Parser:
     def __init__(self, url):
         self.user = {}
         self.url = url
+        self.html = self.fetch_html()
         self.cook_soup()
 
     def cook_soup(self):
-        if self.fetch_html():
+        if self.html:
             self.soup = BeautifulSoup(self.html)
         else:
             return False
@@ -36,12 +37,12 @@ class Parser:
     def fetch_html(self):
         try:
             cHandle = urllib2.urlopen(self.url, timeout=20)
-            self.html = cHandle.read()
+            html = cHandle.read()
             cHandle.close()
         except Exception as e:
             print "Error in '{}'".format(sys._getframe().f_code.co_name)
 
-        return True
+        return html
 
     def get_user_data(self):
         if self.is_profile_private():
@@ -55,17 +56,15 @@ class Parser:
         self.user["status"] = self.get_user_status()
 
         # :Mobile version or not
-        self.user["mobile_version"] = self.is_user_mobile()
+        self.user["is_mobile"] = self.is_user_mobile()
 
         # :Online OR not [last seen time]
-        self.user["online"] = self.is_user_online()
+        self.user["is_online"] = self.is_user_online()
         self.user["last_visit"] = self.get_last_seen_datetime()
-        self.user["last_visit_text"] = self.generate_user_last_seen_line(
-            self.user["last_visit"])
         self.user["last_visit_lt_an_hour_ago"] = False
-        if 'ago' in self.user["last_visit_text"]:
+        if 'ago' in self.get_user_last_seen_text():
             self.user["last_visit_lt_an_hour_ago"] = True
-            self.user["last_visit"] = None
+            # self.user["last_visit"] = None
 
         # :Secondary data fectching
         user_secondary_data = self.get_user_secondary_data()
@@ -192,33 +191,6 @@ class Parser:
         except Exception as e:
             print "Error in '{}'".format(sys._getframe().f_code.co_name)
         return dt
-
-    def generate_user_last_seen_line(self, last_seen_datetime):
-        if not last_seen_datetime:
-            last_seen_line = 'Online'
-        else:
-            # TBD check that last_seen_datetime is actually a datetime
-            now = pytz.timezone(config.CLIENT_TZ).localize(datetime.now())
-            delta_datetime = now - last_seen_datetime
-            delta_days = (now.date() - last_seen_datetime.date()).days
-            minutes_ago = delta_datetime.seconds / 60
-
-            if minutes_ago < 60:
-                last_seen_line = 'last seen {} minutes ago'.format(minutes_ago)
-            elif delta_days == 0:
-                last_seen_line = last_seen_datetime.strftime(
-                    'last seen today at %H:%M')
-            elif delta_days == 1:
-                last_seen_line = last_seen_datetime.strftime(
-                    'last seen yesterday at %H:%M')
-            else:
-                last_seen_line = last_seen_datetime.strftime(
-                    'last seen on %B %d at %H:%M')
-
-        if self.user["mobile_version"]:
-            last_seen_line += ' [Mobile]'
-
-        return last_seen_line
 
     def get_user_secondary_data(self):
         secondary_data = {}
