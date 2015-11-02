@@ -4,8 +4,7 @@
 from __future__ import unicode_literals
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-from logger import Logger, summarize
-from user import User as UserObj
+from logger import Logger
 from utils import clear_screen, normalize_unicode
 from parser import Parser
 from models import *
@@ -45,13 +44,6 @@ class VKStalk:
             ((42 - len(self.version)) / 2) + self.version + \
             '=' * ((42 - len(self.version)) / 2) + '\n\n'
 
-        # self.mail_notification_hours = config.MAIL_NOTIFICATION_HOURS
-        # self.summary_notification_days = config.REPORT_DAYS
-        # self.summary_notification_hours = config.REPORT_HOURS
-        # self.max_files_for_summary = config.MAX_FILES_PER_REPORT
-
-        self.prev_log = ''
-        self.log = ''
         self.last_error = None
         self.error_counter = 0
         self.logs_counter = 0
@@ -60,41 +52,6 @@ class VKStalk:
         # Print greeting message
         self.vk_logger.console_log(
             "VKStalk successfully launched! Have a tea and analyze the results.")
-
-    def prepare_log(self):
-        # self.vk_logger.logger.debug('Preparing log')
-
-        # Common log to file
-        self.log = "{0} -- {1}\nStatus: {2}\n\n".format(self.user.data.name,
-                                                        self.user.last_visit_text,
-                                                        self.user.activity_logs[
-                                                            -1].status
-                                                        )
-
-        # Generating a timestamp and adding it to the log string
-        self.log_time = datetime.strftime(
-            datetime.now(), '>>>Date: %d-%m-%Y. Time: %H:%M:%S\n')
-        self.log = self.log_time + self.log.rstrip()
-        self.log += generate_user_data_changes_string(self.changes['data'])
-        self.log += '\n\n'
-
-        # Prepare output to console
-        self.console_log = config.CONSOLE_LOG_TEMPLATE.format(
-            self.version,
-            self.birth,
-            self.user.vk_id,
-            self.user.data.name,
-            self.logs_counter,
-            self.error_counter,
-            self.log,
-            self.last_error,
-        )
-
-        # mailer.send_mail_if_time()
-
-        clear_screen()
-        # return write_log
-        return True
 
     def populate_user(self):
         p = Parser(self.user.url)
@@ -156,29 +113,48 @@ class VKStalk:
             # self.db_session.close()
 
     # #####Logging part######
-    def show_write_info(self):
-        if self.prepare_log():
-            # self.vk_logger.logger.debug('Writing log to file')
-            try:
-                # self.vk_logger.log_activity(self.log)
-                self.vk_logger.console_log(self.console_log)
-                pass
-            except Exception as e:
-                # self.vk_logger.logger.error(
-                #     "Error in writing Data to log file and console")
-                return False
+    def console_log(self):
+        # self.vk_logger.logger.debug('Writing log to console')
+        try:
+            log = self.generate_console_log()
+            self.vk_logger.console_log(log)
+        except Exception as e:
+            # self.vk_logger.logger.error(
+            #     "Error in writing Data to log file and console")
+            print "Error in '{}'".format(sys._getframe().f_code.co_name)
 
-        return True
+    def generate_console_log(self):
+        # self.vk_logger.logger.debug('Preparing log')
+
+        # Common log to file
+        self.log = "{0} -- {1}\nStatus: {2}\n\n".format(self.user.data.name,
+                                                        self.user.last_visit_text,
+                                                        self.user.activity_logs[
+                                                            -1].status
+                                                        )
+
+        # Generating a timestamp and adding it to the log string
+        self.log_time = datetime.strftime(
+            datetime.now(), '>>>Date: %d-%m-%Y. Time: %H:%M:%S\n')
+        self.log = self.log_time + self.log.rstrip()
+        self.log += generate_user_data_changes_string(self.changes['data'])
+        self.log += '\n\n'
+
+        # Prepare output to console
+        console_log = config.CONSOLE_LOG_TEMPLATE.format(
+            self.version,
+            self.birth,
+            self.user.vk_id,
+            self.user.data.name,
+            self.logs_counter,
+            self.error_counter,
+            self.log,
+            self.last_error,
+        )
+
+        return console_log
 
     # ######################################END logging########################
-
-    # summarizer
-    # Send summaries by email, every Sunday at 9AM
-    def summarize(self):
-
-        pass
-
-    ##########################################################################
 
     def single_request(self):
         # ConsoleLog('Fetching user data...')
@@ -188,22 +164,16 @@ class VKStalk:
         self.db_session.add(self.user)
         self.populate_user()
         clear_screen()
-        request_successful = self.show_write_info()
+        self.console_log()
         self.db_session.close()
-        return request_successful
 
         # self.vk_logger.logger.debug('Finished single request\n\n')
 
     def work(self):
         # self.vk_logger.logger.debug('Begin work')
         while True:
-            if not self.single_request():
-                break
+            self.single_request()
             time.sleep(config.DATA_FETCH_INTERVAL)
-        ##RESTART APP###
-        clear_screen()
-        # Restart main cycle
-        self.work()
 
 
 def generate_user_data_changes_string(data_changes):
