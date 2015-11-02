@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 import string
 from datetime import datetime, timedelta
 from pprint import pprint
-from logger import Logger, Summarize
+from logger import Logger, summarize
 import smtplib  # for mail sending
 from user import User
 import config

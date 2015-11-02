@@ -2,24 +2,19 @@
 
 # Required modules
 from __future__ import unicode_literals
-import urllib2  # retrieve the page
-import codecs  # to encode into utf-8 russian characters
-import time  # used for time.sleep()
-import os  # to check if a file exists
 from bs4 import BeautifulSoup
-# from threading import Thread
-import string
 from datetime import datetime, timedelta
-from pprint import pprint
-from logger import Logger, Summarize
-import smtplib  # for mail sending
+from logger import Logger, summarize
 from user import User as UserObj
-import config
-import urlparse
-import sys
 from utils import clear_screen, normalize_unicode
 from parser import Parser
 from models import *
+
+import urllib2  # retrieve the page
+import time  # used for time.sleep()
+import string
+import config
+import sys
 
 
 class VKStalk:
@@ -29,15 +24,18 @@ class VKStalk:
 
         self.db_session = Session()
 
-        user = self.db_session.query(User).filter_by(vk_id=user_id).first()
-        if not user:
+        try:
+            user = self.db_session.query(User).filter_by(vk_id=user_id).one()
+        except NoResultFound, e:
             user = User(vk_id=user_id)
             self.db_session.add(user)
             self.db_session.commit()
+
         if not user.data:
             user.data = UserData()
             self.db_session.commit()
         self.user = user
+        self.db_session.close()
 
         self.vk_logger = Logger(user_id, 10)
 
@@ -58,28 +56,12 @@ class VKStalk:
         self.error_counter = 0
         self.logs_counter = 0
 
-        # self.data_logger_is_built = False
-        # self.error_logger_is_built = False
-        # self.debug_mode = debug_mode
-        # self.current_path = '/'.join(__file__.split('/')[:-1])
-        # self.filename = ''
-        # self.secondary_data_keys_list = []
-        self.email_notifications = email_notifications
-        self.mail_recipient = email
-        self.last_mail_time = -1
-        self.last_summary_mail_day = -1
-        # 7 will consider Mon-Sun. 8 for Sun-Sun, so that data saved on sunday
-        # after 10AM is also considered
-
-        self.prev_photo_change = None
-        self.prev_photos_with_change = None
-
         clear_screen()
         # Print greeting message
         self.vk_logger.console_log(
             "VKStalk successfully launched! Have a tea and analyze the results.")
 
-    def PrepareLog(self):
+    def prepare_log(self):
         # self.vk_logger.logger.debug('Preparing log')
 
         # Common log to file
@@ -174,8 +156,8 @@ class VKStalk:
             # self.db_session.close()
 
     # #####Logging part######
-    def ShowWriteInfo(self):
-        if self.PrepareLog():
+    def show_write_info(self):
+        if self.prepare_log():
             # self.vk_logger.logger.debug('Writing log to file')
             try:
                 # self.vk_logger.log_activity(self.log)
@@ -190,36 +172,38 @@ class VKStalk:
 
     # ######################################END logging########################
 
-    # Summarizer
+    # summarizer
     # Send summaries by email, every Sunday at 9AM
-    def Summarize(self):
+    def summarize(self):
 
         pass
 
     ##########################################################################
 
-    def SingleRequest(self):
+    def single_request(self):
         # ConsoleLog('Fetching user data...')
         self.vk_logger.console_log('Fetching user data...')
         # self.vk_logger.logger.debug('Start single request')
+        self.db_session = Session()
+        self.db_session.add(self.user)
         self.populate_user()
-
         clear_screen()
-        if not self.ShowWriteInfo():
-            return False
+        request_successful = self.show_write_info()
+        self.db_session.close()
+        return request_successful
 
         # self.vk_logger.logger.debug('Finished single request\n\n')
 
-    def Work(self):
+    def work(self):
         # self.vk_logger.logger.debug('Begin work')
         while True:
-            if self.SingleRequest() == False:
+            if not self.single_request():
                 break
             time.sleep(config.DATA_FETCH_INTERVAL)
         ##RESTART APP###
         clear_screen()
         # Restart main cycle
-        self.Work()
+        self.work()
 
 
 def generate_user_data_changes_string(data_changes):

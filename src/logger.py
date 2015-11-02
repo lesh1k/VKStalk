@@ -103,7 +103,7 @@ class Logger:
         self.console_logger.log(19, message)
 
 
-def Summarize(user_name='', log_folder='Data/Logs/', extension=".log",
+def summarize(user_name='', log_folder='Data/Logs/', extension=".log",
               max_files=-1):
     if not user_name:
         return False

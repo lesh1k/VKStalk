@@ -43,6 +43,6 @@ if __name__ == "__main__":
     # vk_object = VKStalk(user_id, debug_mode=enable_debug,
     #                     email_notifications=email_notifications, email=email)
 
-    vk_object = VKStalk("45156687", log_level=10, email_notifications=False,
+    vk_object = VKStalk("83029348", log_level=10, email_notifications=False,
                         email='')
-    vk_object.Work()
+    vk_object.work()
