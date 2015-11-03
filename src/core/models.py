@@ -4,7 +4,9 @@ from sqlalchemy import create_engine, Column, ForeignKey, Integer, String,\
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy.orm.exc import NoResultFound
 from helpers.utils import convert_to_snake_case
+from helpers.h_logging import get_logger
 from datetime import datetime
 from config import settings
 
@@ -41,6 +43,28 @@ class User(BaseMixin, Base):
             return urlparse.urljoin(settings.SOURCE_URL, "id" + self.vk_id)
 
         return urlparse.urljoin(settings.SOURCE_URL, self.vk_id)
+
+    @classmethod
+    def get_or_create_user_with_vk_id(cls, vk_id):
+        db_session = Session()
+        try:
+            user = db_session.query(cls).filter_by(vk_id=vk_id).one()
+            get_logger('file').debug(
+                'User with vk_id={} found and retrieved.'.format(vk_id))
+        except NoResultFound, e:
+            get_logger('file').debug(
+                'User with vk_id={} not found. Creating.'.format(vk_id))
+            user = cls(vk_id=vk_id)
+            db_session.add(user)
+            db_session.commit()
+
+        if not user.data:
+            get_logger('file').debug(
+                'UserData absent. Creating and committing')
+            user.data = UserData()
+            db_session.commit()
+        db_session.close()
+        return user
 
     @property
     def last_visit_text(self):

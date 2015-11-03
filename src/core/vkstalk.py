@@ -3,7 +3,6 @@
 # Required modules
 from __future__ import unicode_literals
 from bs4 import BeautifulSoup
-from sqlalchemy.orm.exc import NoResultFound
 from datetime import datetime, timedelta
 from helpers.h_logging import get_logger
 from helpers.utils import clear_screen
@@ -20,26 +19,7 @@ class VKStalk:
     def __init__(self, user_id, log_level=21, email_notifications=False, email=''):
         get_logger('file').info('Initializing VKStalk')
         self.birth = datetime.now().strftime(settings.DATETIME_FORMAT)
-
-        self.db_session = Session()
-        try:
-            user = self.db_session.query(User).filter_by(vk_id=user_id).one()
-            get_logger('file').debug(
-                'User with vk_id={} found and retrieved.'.format(user_id))
-        except NoResultFound, e:
-            get_logger('file').debug(
-                'User with vk_id={} not found. Creating.'.format(user_id))
-            user = User(vk_id=user_id)
-            self.db_session.add(user)
-            self.db_session.commit()
-
-        if not user.data:
-            get_logger('file').debug(
-                'UserData absent. Creating and committing')
-            user.data = UserData()
-            self.db_session.commit()
-        self.user = user
-        self.db_session.close()
+        self.user = User.get_or_create_user_with_vk_id(user_id)
 
         self.last_error = None
         self.error_counter = 0
@@ -97,16 +77,17 @@ class VKStalk:
                 else:
                     self.user.activity_logs.append(activity_log)
                     self.logs_counter += 1
-        except:
-            raise
-            print "Error in '{}'".format(sys._getframe().f_code.co_name)
-            print "Error setting key:value - {0}:{1}".format(key. user_data[key])
+        except Exception, e:
+            get_logger('file').fatal(
+                "Error in '{}'".format(sys._getframe().f_code.co_name))
+            get_logger('file').fatal(
+                "Error setting key:value - {0}:{1}".format(key. user_data[key]))
             self.db_session.rollback()
-            print "Session changes were rolled back."
+            get_logger('file').info("Session changes were rolled back.")
+            raise
         finally:
             self.changes = changes
             self.db_session.commit()
-            # self.db_session.close()
 
     # #####Logging part######
     def console_log(self):
