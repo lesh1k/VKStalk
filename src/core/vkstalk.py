@@ -6,10 +6,10 @@ from bs4 import BeautifulSoup
 from sqlalchemy.orm.exc import NoResultFound
 from datetime import datetime, timedelta
 from helpers.h_logging import get_logger
-from utils import clear_screen
-from parser import Parser
+from helpers.utils import clear_screen
+from core.parser import Parser
+from core.models import *
 from config import settings
-from models import *
 
 import time  # used for time.sleep()
 import sys
@@ -119,7 +119,6 @@ class VKStalk:
         # self.vk_logger.logger.debug('Writing log to console')
         try:
             log = self.generate_console_log()
-            # self.vk_logger.console_log(log)
             get_logger('console').info(log)
         except Exception as e:
             # self.vk_logger.logger.error(

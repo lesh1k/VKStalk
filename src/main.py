@@ -1,4 +1,4 @@
-from vkstalk import VKStalk
+from core.vkstalk import VKStalk
 import sys
 import re
 from helpers.h_logging import setup_logging

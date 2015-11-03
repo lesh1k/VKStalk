@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, Column, ForeignKey, Integer, String,\
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from utils import convert_to_snake_case
+from helpers.utils import convert_to_snake_case
 from datetime import datetime
 from config import settings
 

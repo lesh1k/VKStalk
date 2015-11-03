@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-from utils import get_all_digits_from_str
+from helpers.utils import get_all_digits_from_str
 from config import settings
 
 import urllib2  # retrieve the page
@@ -15,16 +15,14 @@ class Parser:
     def __init__(self, url):
         self.user = {}
         self.url = url
-        self.cook_soup()
-
-    def cook_soup(self):
         html = self.fetch_html()
-        if html:
-            self.soup = BeautifulSoup(html)
-        else:
-            return False
+        self.soup = self.cook_soup(html)
 
-        return True
+    def cook_soup(self, html):
+        soup = None
+        if html:
+            soup = BeautifulSoup(html)
+        return soup
 
     def fetch_html(self):
         try:
@@ -41,23 +39,15 @@ class Parser:
         if self.is_profile_private():
             exit("Private profile. Access forbidden")
 
-        # :Data fetching
-        # :Name
         self.user["name"] = self.get_user_name()
-
-        # :Status
         self.user["status"] = self.get_user_status()
-
-        # :Mobile version or not
+        self.user["is_online"] = self.is_user_online()
         self.user["is_mobile"] = self.is_user_mobile()
 
-        # :Online OR not [last seen time]
-        self.user["is_online"] = self.is_user_online()
         self.user["last_visit"] = self.get_last_seen_datetime()
         self.user["last_visit_lt_an_hour_ago"] = False
         if 'ago' in self.get_user_last_seen_text():
             self.user["last_visit_lt_an_hour_ago"] = True
-            # self.user["last_visit"] = None
 
         # :Secondary data fectching
         user_secondary_data = self.get_user_secondary_data()
@@ -126,21 +116,20 @@ class Parser:
         return is_online
 
     def get_user_last_seen_text(self):
+        text = ""
         last_seen = self.soup.find('div', {'class': 'lv'})
         if last_seen:
-            last_seen = last_seen.text
+            text = last_seen.text
         else:
             last_seen = self.soup.find(
                 'div', {'class': 'pp_last_activity'})
             if last_seen:
-                last_seen = last_seen.text
+                text = last_seen.text
             else:
                 last_seen = self.soup.find('b', {'id': 'profile_time_lv'})
                 if last_seen:
-                    last_seen = last_seen.text
-                else:
-                    last_seen = ""
-        return last_seen
+                    text = last_seen.text
+        return text
 
     def get_last_seen_datetime(self):
         try:
