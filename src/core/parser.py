@@ -11,6 +11,7 @@ import urlparse
 import sys
 import pytz
 import socket
+import time
 
 
 class Parser:
@@ -28,17 +29,28 @@ class Parser:
 
     def fetch_html(self):
         html = None
-        for attempt in xrange(settings.MAX_CONNECTION_ATTEMPTS):
+        attempt = 1
+        while True:
             try:
                 get_logger('file').debug(
-                    'Fetching HTML. Attempt: {}'.format(attempt+1))
+                    'Fetching HTML. Attempt: {}'.format(attempt))
                 cHandle = urllib2.urlopen(self.url,
                                           timeout=settings.CONNECTION_TIMEOUT)
                 html = cHandle.read()
                 cHandle.close()
+                break
             except socket.timeout, e:
                 get_logger('file').error(
                     'Connection timed out')
+            except urllib2.URLError, e:
+                if e.errno and e.errno == 101 or isinstance(e.reason, socket.gaierror):
+                    message = 'Attempt {0}. Network unavailable. Retry in {1} seconds...'.format(attempt, settings.DATA_FETCH_INTERVAL)
+                    get_logger('file').error(message)
+                    get_logger('console').info(message)
+                    time.sleep(settings.DATA_FETCH_INTERVAL)
+                else:
+                    raise
+            attempt += 1
         if not html:
             get_logger('file').fatal(
                 'Could not fetch HTML. Reached MAX_CONNECTION_ATTEMPTS: {}.'
@@ -248,7 +260,7 @@ class Parser:
     def get_user_number_of_wallposts(self):
         # self.vk_logger.logger.debug("Getting number of wall posts")
         wallposts_number = -1
-        all_slim_headers = self.soup.findAll(class_='slim_header')
+        all_slim_headers = self.soup(class_='slim_header')
         if len(all_slim_headers) > 0:
             for item in all_slim_headers:
                 if 'post' in item.text:
@@ -260,16 +272,9 @@ class Parser:
         return wallposts_number
 
     def get_user_profile_photo_link(self):
-        # self.vk_logger.logger.debug("Getting link to profile photo.")
-        photo_link = None
-        short_profile = self.soup.find(id="mcont")
-        if short_profile:
-            short_profile = short_profile.find(class_='owner_panel')
-            if short_profile:
-                photo_tag = short_profile.find('a')
-                if photo_tag:
-                    photo_link = photo_tag.get('href')
-                    if photo_link:
-                        photo_link = urlparse.urljoin(self.url,
-                                                      photo_link)
-        return photo_link
+        get_logger('file').debug('Getting link to profile photo.')
+        photo_url = None
+        photo = self.soup.select("#mcont .owner_panel a img")
+        if photo:
+            photo_url = photo[0].get("src")
+        return photo_url
