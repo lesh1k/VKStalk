@@ -4,22 +4,21 @@
 from __future__ import unicode_literals
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-from logger import Logger
-from utils import clear_screen, normalize_unicode
+from helpers.h_logging import get_logger
+from utils import clear_screen
 from parser import Parser
+from config import settings
 from models import *
 
-import urllib2  # retrieve the page
 import time  # used for time.sleep()
-import string
-import config
 import sys
 
 
 class VKStalk:
 
     def __init__(self, user_id, log_level=21, email_notifications=False, email=''):
-        self.birth = datetime.now().strftime(config.DATETIME_FORMAT)
+        get_logger('file').info("Heya. I'm alive!")
+        self.birth = datetime.now().strftime(settings.DATETIME_FORMAT)
 
         self.db_session = Session()
 
@@ -36,9 +35,9 @@ class VKStalk:
         self.user = user
         self.db_session.close()
 
-        self.vk_logger = Logger(user_id, 10)
+        # self.vk_logger = Logger(user_id, 10)
 
-        self.version = "| VKStalk ver. {} |".format(config.VERSION)
+        self.version = "| VKStalk ver. {} |".format(settings.VERSION)
         # pretify program version output
         self.version = '\n' + '=' * \
             ((42 - len(self.version)) / 2) + self.version + \
@@ -50,7 +49,9 @@ class VKStalk:
 
         clear_screen()
         # Print greeting message
-        self.vk_logger.console_log(
+        # self.vk_logger.console_log(
+        #     "VKStalk successfully launched! Have a tea and analyze the results.")
+        get_logger('console').info(
             "VKStalk successfully launched! Have a tea and analyze the results.")
 
     def populate_user(self):
@@ -117,7 +118,8 @@ class VKStalk:
         # self.vk_logger.logger.debug('Writing log to console')
         try:
             log = self.generate_console_log()
-            self.vk_logger.console_log(log)
+            # self.vk_logger.console_log(log)
+            get_logger('console').info(log)
         except Exception as e:
             # self.vk_logger.logger.error(
             #     "Error in writing Data to log file and console")
@@ -134,14 +136,16 @@ class VKStalk:
                                                         )
 
         # Generating a timestamp and adding it to the log string
-        self.log_time = datetime.strftime(
-            datetime.now(), '>>>Date: %d-%m-%Y. Time: %H:%M:%S\n')
-        self.log = self.log_time + self.log.rstrip()
+        check_time = datetime.strftime(
+            datetime.now(), '>>> Checked on %Y-%m-%d at %H:%M:%S <<<\n\n')
+        log_time = datetime.strftime(
+            self.user.activity_logs[-1].timestamp, 'Date: %d-%m-%Y. Time: %H:%M:%S\n')
+        self.log = check_time + log_time + self.log.rstrip()
         self.log += generate_user_data_changes_string(self.changes['data'])
         self.log += '\n\n'
 
         # Prepare output to console
-        console_log = config.CONSOLE_LOG_TEMPLATE.format(
+        console_log = settings.CONSOLE_LOG_TEMPLATE.format(
             self.version,
             self.birth,
             self.user.vk_id,
@@ -158,7 +162,8 @@ class VKStalk:
 
     def single_request(self):
         # ConsoleLog('Fetching user data...')
-        self.vk_logger.console_log('Fetching user data...')
+        # self.vk_logger.console_log('Fetching user data...')
+        get_logger('console').info('Fetching user data...')
         # self.vk_logger.logger.debug('Start single request')
         self.db_session = Session()
         self.db_session.add(self.user)
@@ -173,7 +178,7 @@ class VKStalk:
         # self.vk_logger.logger.debug('Begin work')
         while True:
             self.single_request()
-            time.sleep(config.DATA_FETCH_INTERVAL)
+            time.sleep(settings.DATA_FETCH_INTERVAL)
 
 
 def generate_user_data_changes_string(data_changes):

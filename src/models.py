@@ -9,10 +9,10 @@ from utils import convert_to_snake_case
 import urlparse
 from datetime import datetime
 import pytz
-import config
+from config import settings
 
 
-engine = create_engine(URL(**config.DATABASE))
+engine = create_engine(URL(**settings.DATABASE))
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
 
@@ -38,9 +38,9 @@ class User(BaseMixin, Base):
         # self.logger.logger.debug('Generating URLs')
 
         if self.vk_id.isdigit():
-            return urlparse.urljoin(config.SOURCE_URL, "id" + self.vk_id)
+            return urlparse.urljoin(settings.SOURCE_URL, "id" + self.vk_id)
 
-        return urlparse.urljoin(config.SOURCE_URL, self.vk_id)
+        return urlparse.urljoin(settings.SOURCE_URL, self.vk_id)
 
     @property
     def last_visit_text(self):
@@ -48,7 +48,7 @@ class User(BaseMixin, Base):
             last_seen_line = 'Online'
         else:
             # TBD check that self.activity_logs[-1].last_visit is actually a datetime
-            now = pytz.timezone(config.CLIENT_TZ).localize(datetime.now())
+            now = pytz.timezone(settings.CLIENT_TZ).localize(datetime.now())
             delta_datetime = now - self.activity_logs[-1].last_visit
             delta_days = (now.date() - self.activity_logs[-1].last_visit.date()).days
             minutes_ago = delta_datetime.seconds / 60

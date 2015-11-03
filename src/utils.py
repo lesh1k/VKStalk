@@ -3,6 +3,7 @@ import os
 import unicodedata
 import re
 import string
+from config import settings
 
 
 def clear_screen():

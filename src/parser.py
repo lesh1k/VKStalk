@@ -1,34 +1,26 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-import urllib2  # retrieve the page
-import codecs  # to encode into utf-8 russian characters
-import time  # used for time.sleep()
-import os  # to check if a file exists
 from bs4 import BeautifulSoup
-# from threading import Thread
-import string
 from datetime import datetime, timedelta
-from pprint import pprint
-from logger import Logger, summarize
-import smtplib  # for mail sending
-from user import User
-import config
+from utils import get_all_digits_from_str
+from config import settings
+
+import urllib2  # retrieve the page
 import urlparse
 import sys
 import pytz
-from utils import clear_screen, get_all_digits_from_str
 
 
 class Parser:
     def __init__(self, url):
         self.user = {}
         self.url = url
-        self.html = self.fetch_html()
         self.cook_soup()
 
     def cook_soup(self):
-        if self.html:
-            self.soup = BeautifulSoup(self.html)
+        html = self.fetch_html()
+        if html:
+            self.soup = BeautifulSoup(html)
         else:
             return False
 
@@ -74,12 +66,11 @@ class Parser:
         return self.user
 
     def is_profile_private(self):
-        max_attempts = config.MAX_CONNECTION_ATTEMPTS
+        max_attempts = settings.MAX_CONNECTION_ATTEMPTS
         for attempt in xrange(1, max_attempts + 1):
             if ((self.soup.find('div', {'class': 'service_msg_null'}))
                     or ('This user deleted their page. Information unavailable.' in self.soup.text)
                     or ('This page is either deleted or has not been created yet.' in self.soup.text)):
-                clear_screen()
                 self.cook_soup()
                 profile_private = True
             else:
@@ -176,10 +167,10 @@ class Parser:
             year = datetime.now().year
             dt = dt.replace(year=year, second=0, microsecond=0)
             if 'ago' in last_seen:
-                dt = pytz.timezone(config.CLIENT_TZ).localize(dt)
+                dt = pytz.timezone(settings.CLIENT_TZ).localize(dt)
             else:
-                dt = pytz.timezone(config.VK_TZ).localize(dt)
-            dt = dt.astimezone(pytz.timezone(config.CLIENT_TZ))
+                dt = pytz.timezone(settings.VK_TZ).localize(dt)
+            dt = dt.astimezone(pytz.timezone(settings.CLIENT_TZ))
         except Exception as e:
             print "Error in '{}'".format(sys._getframe().f_code.co_name)
         return dt

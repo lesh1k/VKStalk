@@ -1,6 +1,7 @@
 from vkstalk import VKStalk
 import sys
 import re
+from helpers.h_logging import setup_logging
 
 if __name__ == "__main__":
     # keys = []
@@ -43,6 +44,8 @@ if __name__ == "__main__":
     # vk_object = VKStalk(user_id, debug_mode=enable_debug,
     #                     email_notifications=email_notifications, email=email)
 
-    vk_object = VKStalk("83029348", log_level=10, email_notifications=False,
+    user_id = "45156687"
+    setup_logging(user_id)
+    vk_object = VKStalk(user_id, log_level=10, email_notifications=False,
                         email='')
     vk_object.work()
