@@ -3,6 +3,7 @@
 # Required modules
 from __future__ import unicode_literals
 from bs4 import BeautifulSoup
+from sqlalchemy.orm.exc import NoResultFound
 from datetime import datetime, timedelta
 from helpers.h_logging import get_logger
 from utils import clear_screen
@@ -136,10 +137,14 @@ class VKStalk:
                                                         )
 
         # Generating a timestamp and adding it to the log string
+        dt_client_now = datetime.now()
         check_time = datetime.strftime(
-            datetime.now(), '>>> Checked on %Y-%m-%d at %H:%M:%S <<<\n\n')
+            dt_client_now, '>>> Checked on %Y-%m-%d at %H:%M:%S <<<\n\n')
+
+        dt_log_timestamp = self.user.activity_logs[-1].timestamp
         log_time = datetime.strftime(
-            self.user.activity_logs[-1].timestamp, 'Date: %d-%m-%Y. Time: %H:%M:%S\n')
+            dt_log_timestamp, 'Date: %d-%m-%Y. Time: %H:%M:%S\n')
+
         self.log = check_time + log_time + self.log.rstrip()
         self.log += generate_user_data_changes_string(self.changes['data'])
         self.log += '\n\n'

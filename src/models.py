@@ -5,11 +5,11 @@ from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from utils import convert_to_snake_case
+from datetime import datetime
+from config import settings
 
 import urlparse
-from datetime import datetime
 import pytz
-from config import settings
 
 
 engine = create_engine(URL(**settings.DATABASE))
@@ -110,7 +110,7 @@ class UserActivityLog(BaseMixin, Base):
     last_visit = Column(DateTime(timezone=True))
     # last_visit_text = Column(String)
     timestamp = Column(DateTime(timezone=True),
-                       default=datetime.utcnow)
+                       default=datetime.now(pytz.timezone(settings.CLIENT_TZ)))
 
 
 Base.metadata.create_all(engine)
