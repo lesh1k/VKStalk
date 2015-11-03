@@ -18,40 +18,34 @@ import sys
 class VKStalk:
 
     def __init__(self, user_id, log_level=21, email_notifications=False, email=''):
-        get_logger('file').info("Heya. I'm alive!")
+        get_logger('file').info('Initializing VKStalk')
         self.birth = datetime.now().strftime(settings.DATETIME_FORMAT)
 
         self.db_session = Session()
-
         try:
             user = self.db_session.query(User).filter_by(vk_id=user_id).one()
+            get_logger('file').debug(
+                'User with vk_id={} found and retrieved.'.format(user_id))
         except NoResultFound, e:
+            get_logger('file').debug(
+                'User with vk_id={} not found. Creating.'.format(user_id))
             user = User(vk_id=user_id)
             self.db_session.add(user)
             self.db_session.commit()
 
         if not user.data:
+            get_logger('file').debug(
+                'UserData absent. Creating and committing')
             user.data = UserData()
             self.db_session.commit()
         self.user = user
         self.db_session.close()
-
-        # self.vk_logger = Logger(user_id, 10)
-
-        self.version = "| VKStalk ver. {} |".format(settings.VERSION)
-        # pretify program version output
-        self.version = '\n' + '=' * \
-            ((42 - len(self.version)) / 2) + self.version + \
-            '=' * ((42 - len(self.version)) / 2) + '\n\n'
 
         self.last_error = None
         self.error_counter = 0
         self.logs_counter = 0
 
         clear_screen()
-        # Print greeting message
-        # self.vk_logger.console_log(
-        #     "VKStalk successfully launched! Have a tea and analyze the results.")
         get_logger('console').info(
             "VKStalk successfully launched! Have a tea and analyze the results.")
 
@@ -150,7 +144,6 @@ class VKStalk:
 
         # Prepare output to console
         console_log = settings.CONSOLE_LOG_TEMPLATE.format(
-            self.version,
             self.birth,
             self.user.vk_id,
             self.user.data.name,

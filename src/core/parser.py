@@ -3,12 +3,14 @@ from __future__ import unicode_literals
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from helpers.utils import get_all_digits_from_str
+from helpers.h_logging import get_logger
 from config import settings
 
 import urllib2  # retrieve the page
 import urlparse
 import sys
 import pytz
+import socket
 
 
 class Parser:
@@ -25,14 +27,24 @@ class Parser:
         return soup
 
     def fetch_html(self):
-        try:
-            cHandle = urllib2.urlopen(self.url, timeout=20)
-            html = cHandle.read()
-            cHandle.close()
-        except Exception as e:
-            print "Error in '{}'".format(sys._getframe().f_code.co_name)
-            import ipdb; ipdb.set_trace()
-
+        html = None
+        for attempt in xrange(settings.MAX_CONNECTION_ATTEMPTS):
+            try:
+                get_logger('file').debug(
+                    'Fetching HTML. Attempt: {}'.format(attempt+1))
+                cHandle = urllib2.urlopen(self.url,
+                                          timeout=settings.CONNECTION_TIMEOUT)
+                html = cHandle.read()
+                cHandle.close()
+            except socket.timeout, e:
+                get_logger('file').error(
+                    'Connection timed out')
+        if not html:
+            get_logger('file').fatal(
+                'Could not fetch HTML. Reached MAX_CONNECTION_ATTEMPTS: {}.'
+                .format(settings.MAX_CONNECTION_ATTEMPTS)
+            )
+            exit('Could not fetch HTML')
         return html
 
     def get_user_data(self):

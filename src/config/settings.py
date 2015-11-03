@@ -4,10 +4,12 @@ from __future__ import unicode_literals
 import os
 import logging
 from secrets import *
+from helpers.program_version import prettify_project_version
 
 
 PROJECT_NAME = "vkstalk"
 VERSION = "5.0.0 ALPHA"  # this should be extracted when packaging the app
+VERSION_PRETTIFIED = prettify_project_version(VERSION)
 
 PROJECT_ROOT = os.path.abspath(
     os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
@@ -26,6 +28,7 @@ REPORT_HOURS = [10]  # hours
 MAX_FILES_PER_REPORT = 8
 
 MAX_CONNECTION_ATTEMPTS = 10
+CONNECTION_TIMEOUT = 20  # seconds
 
 
 # Timezones
@@ -35,13 +38,14 @@ CLIENT_TZ = "Europe/Chisinau"
 
 # Logging
 
-# self.version, self.birth, self.user_id, self.user_data['name'],
+# self.birth, self.user_id, self.user_data['name'],
 # self.logs_counter, self.error_counter, self.log, self.last_error
 CONSOLE_LOG_TEMPLATE = (
-    "{0}Launched on {1}\nUser ID: {2}\nUser Name: {3}" +
-    "\nLogs written: {4}\nErrors occurred: {5}\n\n" +
-    "=" * 14 + "| LATEST LOG |" + "=" * 14 + "\n\n{6}" +
-    "=" * 14 + "| LAST ERROR |" + "=" * 14 + "\n\n{7}"
+    VERSION_PRETTIFIED +
+    "Launched on {0}\nUser ID: {1}\nUser Name: {2}" +
+    "\nLogs written: {3}\nErrors occurred: {4}\n\n" +
+    "=" * 14 + "| LATEST LOG |" + "=" * 14 + "\n\n{5}" +
+    "=" * 14 + "| LAST ERROR |" + "=" * 14 + "\n\n{6}"
 )
 
 LOGS_ROTATE_INTERVAL = 1
