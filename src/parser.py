@@ -138,6 +138,8 @@ class Parser:
                 last_seen = self.soup.find('b', {'id': 'profile_time_lv'})
                 if last_seen:
                     last_seen = last_seen.text
+                else:
+                    last_seen = ""
         return last_seen
 
     def get_last_seen_datetime(self):
