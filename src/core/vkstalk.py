@@ -16,17 +16,31 @@ import sys
 
 class VKStalk:
 
-    def __init__(self, user_id, log_level=21, email_notifications=False, email=''):
+    def __init__(self, user_id):
         get_logger('file').info('Initializing VKStalk')
         self.birth = datetime.now().strftime(settings.DATETIME_FORMAT)
-        self.user = User.get_or_create_user_with_vk_id(user_id)
+        self.user = User.from_vk_id(user_id)
         self.logs_counter = 0
         clear_screen()
 
-    def populate_user(self):
+    def scrape(self):
+        while True:
+            self.single_request()
+            time.sleep(settings.DATA_FETCH_INTERVAL)
+
+    def single_request(self):
+        get_logger('console').info('Fetching user data...')
+        self.db_session = Session()
+        self.db_session.add(self.user)
+        data = self.parse_user_data()
+        self.store_user_data(data)
+        self.console_log()
+        self.db_session.close()
+
+    def parse_user_data(self):
         p = Parser(self.user.url)
         user_data = p.get_user_data()
-        self.store_user_data(user_data)
+        return user_data
 
     def store_user_data(self, user_data):
         try:
@@ -60,9 +74,9 @@ class VKStalk:
         finally:
             self.db_session.commit()
 
-    # #####Logging part######
     def console_log(self):
         log = self.generate_console_log()
+        clear_screen()
         get_logger('console').info(log)
 
     def generate_console_log(self):
@@ -87,7 +101,6 @@ class VKStalk:
             self.log += '\n' + updates
         self.log += '\n\n'
 
-        # Prepare output to console
         console_log = settings.CONSOLE_LOG_TEMPLATE.format(
             self.birth,
             self.user.vk_id,
@@ -97,19 +110,3 @@ class VKStalk:
         )
 
         return console_log
-
-    # ######################################END logging########################
-
-    def single_request(self):
-        get_logger('console').info('Fetching user data...')
-        self.db_session = Session()
-        self.db_session.add(self.user)
-        self.populate_user()
-        clear_screen()
-        self.console_log()
-        self.db_session.close()
-
-    def work(self):
-        while True:
-            self.single_request()
-            time.sleep(settings.DATA_FETCH_INTERVAL)

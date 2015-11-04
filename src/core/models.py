@@ -71,7 +71,7 @@ class User(BaseMixin, Base):
         return last_seen_line
 
     @classmethod
-    def get_or_create_user_with_vk_id(cls, vk_id):
+    def from_vk_id(cls, vk_id):
         db_session = Session()
         try:
             user = db_session.query(cls).filter_by(vk_id=vk_id).one()
@@ -151,16 +151,12 @@ class UserActivityLog(BaseMixin, Base):
     updates = Column(String)
     last_visit_lt_an_hour_ago = Column(Boolean, default=False)
     last_visit = Column(DateTime(timezone=True))
-    # last_visit_text = Column(String)
     timestamp = Column(DateTime(timezone=True),
                        default=datetime.now)
 
     @classmethod
     def from_dict(cls, data):
         inst = cls()
-        # if changes['data']:
-        #     data_changes = generate_data_changes_string(changes['data'])
-        #     activity_log.updates = data_changes.strip()
         keys = set(data.keys()) & set(cls.__dict__.keys())
         for key in keys:
             setattr(inst, key, data[key])

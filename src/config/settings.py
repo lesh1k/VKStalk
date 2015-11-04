@@ -18,15 +18,13 @@ PROJECT_ROOT = os.path.abspath(
 
 SOURCE_URL = "http://vk.com"
 DATA_FETCH_INTERVAL = 15  # seconds
-DATETIME_FORMAT = "%d-%B-%Y at %H:%M"
 
 
 MAIL_NOTIFICATION_HOURS = [10, 23]  # hours
-
 REPORT_DAYS = [6]  # day of week
 REPORT_HOURS = [10]  # hours
-
 MAX_FILES_PER_REPORT = 8
+
 
 MAX_CONNECTION_ATTEMPTS = 10
 CONNECTION_TIMEOUT = 20  # seconds
@@ -40,6 +38,7 @@ SERVER_TZ = get_localzone().zone
 
 # Logging
 
+DATETIME_FORMAT = "%d-%B-%Y at %H:%M"
 # self.birth, self.user_id, self.user_data['name'],
 # self.logs_counter, self.error_counter, self.log, self.last_error
 CONSOLE_LOG_TEMPLATE = (

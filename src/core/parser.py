@@ -125,12 +125,6 @@ class Parser:
             status_text = None
         return status_text
 
-    def is_user_mobile(self):
-        is_mobile = False
-        if self.soup.find(class_='mlvi') is not None:
-            is_mobile = True
-        return is_mobile
-
     def is_user_online(self):
         last_seen = self.get_user_last_seen_text()
         if last_seen and last_seen.lower() == "online":
@@ -139,13 +133,11 @@ class Parser:
             is_online = False
         return is_online
 
-    def get_user_last_seen_text(self):
-        last_seen = self.soup(class_=["lv", "pp_last_activity", "profile_time_lv"])
-        if last_seen:
-            text = last_seen[0].text
-        else:
-            text = ""
-        return text
+    def is_user_mobile(self):
+        is_mobile = False
+        if self.soup.find(class_='mlvi') is not None:
+            is_mobile = True
+        return is_mobile
 
     def get_last_seen_datetime(self):
         if self.is_user_online():
@@ -178,6 +170,14 @@ class Parser:
         dt = as_client_tz(dt)
         return dt
 
+    def get_user_last_seen_text(self):
+        last_seen = self.soup(class_=["lv", "pp_last_activity", "profile_time_lv"])
+        if last_seen:
+            text = last_seen[0].text
+        else:
+            text = ""
+        return text
+
     def get_user_secondary_data(self):
         secondary_data = {}
         secondary_data["wallposts"] = self.get_user_number_of_wallposts()
@@ -185,6 +185,27 @@ class Parser:
         additional_info = self.get_user_additional_info()
         secondary_data.update(additional_info)
         return secondary_data
+
+    def get_user_number_of_wallposts(self):
+        matching_items = self.soup(class_='slim_header',
+                                   text=re.compile("\d+ post."))
+        if matching_items:
+            wallposts_number = get_all_digits_from_str(matching_items[0].text)
+            if wallposts_number.isdigit():
+                wallposts_number = int(wallposts_number)
+            else:
+                wallposts_number = -1
+        else:
+            wallposts_number = -1
+        return wallposts_number
+
+    def get_user_photo_url(self):
+        get_logger('file').debug('Getting profile photo URL.')
+        photo_url = None
+        photo = self.soup.select("#mcont .owner_panel a img")
+        if photo:
+            photo_url = photo[0].get("src")
+        return photo_url
 
     def get_user_additional_info(self):
         additional_info = {}
@@ -245,24 +266,3 @@ class Parser:
             key = '_'.join([i.lower() for i in item_parts if i != value])
             data[key] = int(value)
         return data
-
-    def get_user_number_of_wallposts(self):
-        matching_items = self.soup(class_='slim_header',
-                                   text=re.compile("\d+ post."))
-        if matching_items:
-            wallposts_number = get_all_digits_from_str(matching_items[0].text)
-            if wallposts_number.isdigit():
-                wallposts_number = int(wallposts_number)
-            else:
-                wallposts_number = -1
-        else:
-            wallposts_number = -1
-        return wallposts_number
-
-    def get_user_photo_url(self):
-        get_logger('file').debug('Getting profile photo URL.')
-        photo_url = None
-        photo = self.soup.select("#mcont .owner_panel a img")
-        if photo:
-            photo_url = photo[0].get("src")
-        return photo_url

@@ -46,6 +46,5 @@ if __name__ == "__main__":
 
     user_id = "45156687"
     setup_logging(user_id)
-    vk_object = VKStalk(user_id, log_level=10, email_notifications=False,
-                        email='')
-    vk_object.work()
+    vk_object = VKStalk(user_id)
+    vk_object.scrape()
