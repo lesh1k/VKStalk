@@ -243,8 +243,7 @@ class Parser:
             item_parts = item.split()
             value = get_all_digits_from_str(item)
             key = '_'.join([i.lower() for i in item_parts if i != value])
-            data[key] = value
-
+            data[key] = int(value)
         return data
 
     def get_user_number_of_wallposts(self):

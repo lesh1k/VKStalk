@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from helpers.h_logging import get_logger
-from helpers.utils import clear_screen, as_client_tz
+from helpers.utils import clear_screen, as_client_tz, make_data_updates_string
 from core.parser import Parser
 from core.models import *
 from config import settings
@@ -26,61 +26,38 @@ class VKStalk:
     def populate_user(self):
         p = Parser(self.user.url)
         user_data = p.get_user_data()
-        self.save_data_to_db(user_data)
+        self.store_user_data(user_data)
 
-    def save_data_to_db(self, user_data):
+    def store_user_data(self, user_data):
         try:
-            changes = {
-                'data': {},
-                'activity_log': {},
-            }
+            changes = {}
+            changes['data'] = UserData.get_diff(self.user.data,
+                                                UserData.from_dict(user_data))
+            for key in changes['data']:
+                setattr(self.user.data, key, changes['data'][key]['new'])
 
-            keys = set(user_data.keys()) & set(self.user.data.__dict__.keys())
-
-            for key in keys:
-                old_val = getattr(self.user.data, key)
-                new_val = user_data[key]
-                if (type(old_val) != type(new_val) and unicode(old_val) != unicode(new_val)) or (old_val != new_val and type(old_val) == type(new_val)):
-                    changes['data'][key] = {
-                        'old': old_val,
-                        'new': new_val,
-                    }
-                    setattr(self.user.data, key, user_data[key])
-
-            activity_log = UserActivityLog()
+            activity_log = UserActivityLog.from_dict(user_data)
             if changes['data']:
-                user_data_changes = generate_user_data_changes_string(changes['data'])
+                user_data_changes = make_data_updates_string(changes['data'])
                 activity_log.updates = user_data_changes.strip()
-            keys = [i for i in user_data.keys() if i in UserActivityLog.__dict__.keys() and "__" not in i]
-            for key in keys:
-                if len(self.user.activity_logs):
-                    old_val = getattr(self.user.activity_logs[-1], key)
-                    new_val = user_data[key]
-
-                    if (type(old_val) != type(new_val) and unicode(old_val) != unicode(new_val)) or (old_val != new_val and type(old_val) == type(new_val)):
-                        changes['activity_log'][key] = {
-                            'old': old_val,
-                            'new': new_val,
-                        }
-                else:
-                    changes['activity_log'] = {"First launch placeholder": True}
-                setattr(activity_log, key, user_data[key])
-            if changes['activity_log'] or activity_log.updates:
-                if "last_visit" in changes['activity_log'] and len(changes['activity_log'].keys()) == 1:
-                    pass
-                else:
+            if self.user.activity_logs:
+                changes['activity_log'] = UserActivityLog.get_diff(
+                    self.user.activity_logs[-1],
+                    activity_log
+                )
+            if changes['data'] or changes['activity_log']:
+                if "last_visit" not in changes['activity_log'] \
+                   or len(changes['activity_log'].keys()) > 1:
                     self.user.activity_logs.append(activity_log)
                     self.logs_counter += 1
         except Exception, e:
-            get_logger('file').fatal(
-                "Error in '{}'".format(sys._getframe().f_code.co_name))
-            get_logger('file').fatal(
-                "Error setting key:value - {0}:{1}".format(key. user_data[key]))
+            func_name = sys._getframe().f_code.co_name
+            message = "Error in '{0}. Exception: {1}'".format(func_name, e)
+            get_logger('file').fatal(message)
             self.db_session.rollback()
             get_logger('file').info("Session changes were rolled back.")
             raise
         finally:
-            self.changes = changes
             self.db_session.commit()
 
     # #####Logging part######
@@ -105,7 +82,9 @@ class VKStalk:
         log_time = datetime.strftime(dt_log_timestamp, settings.LOG_DATETIME_TMPL)
 
         self.log = check_time + log_time + self.log.rstrip()
-        self.log += generate_user_data_changes_string(self.changes['data'])
+        updates = self.user.activity_logs[-1].updates
+        if updates:
+            self.log += '\n' + updates
         self.log += '\n\n'
 
         # Prepare output to console
@@ -134,16 +113,3 @@ class VKStalk:
         while True:
             self.single_request()
             time.sleep(settings.DATA_FETCH_INTERVAL)
-
-
-def generate_user_data_changes_string(data_changes):
-    updates = ""
-
-    if data_changes:
-        for key in data_changes:
-            title = key.replace("_", " ").capitalize()
-            old_val = data_changes[key]['old']
-            new_val = data_changes[key]['new']
-            updates += "\n{0}: {1} => {2}".format(title, old_val, new_val)
-
-    return updates

@@ -119,6 +119,27 @@ class UserData(BaseMixin, Base):
     info_2 = Column(String)
     info_3 = Column(String)
 
+    @classmethod
+    def from_dict(cls, data):
+        inst = cls()
+        keys = set(data.keys()) & set(cls.__dict__.keys())
+        for key in keys:
+            setattr(inst, key, data[key])
+        return inst
+
+    @staticmethod
+    def get_diff(old, new):
+        changes = {}
+        excluded_attrs = ['pk', 'user_pk', '_sa_instance_state']
+        keys = [k for k in old.__dict__.keys()
+                if k not in excluded_attrs and "__" not in k]
+        for k in keys:
+            old_val = getattr(old, k)
+            new_val = getattr(new, k)
+            if old_val != new_val:
+                changes[k] = {'old': old_val, 'new': new_val}
+        return changes
+
 
 class UserActivityLog(BaseMixin, Base):
     user_pk = Column(Integer, ForeignKey('user.pk'))
@@ -133,6 +154,31 @@ class UserActivityLog(BaseMixin, Base):
     # last_visit_text = Column(String)
     timestamp = Column(DateTime(timezone=True),
                        default=datetime.now(pytz.timezone(settings.CLIENT_TZ)))
+
+    @classmethod
+    def from_dict(cls, data):
+        inst = cls()
+        # if changes['data']:
+        #     data_changes = generate_data_changes_string(changes['data'])
+        #     activity_log.updates = data_changes.strip()
+        keys = set(data.keys()) & set(cls.__dict__.keys())
+        for key in keys:
+            setattr(inst, key, data[key])
+        return inst
+
+    @staticmethod
+    def get_diff(old, new):
+        changes = {}
+        excluded_attrs = ['pk', 'user_pk', 'user', 'timestamp', 'updates',
+                          '_sa_instance_state']
+        keys = [k for k in old.__dict__.keys()
+                if k not in excluded_attrs and "__" not in k]
+        for k in keys:
+            old_val = getattr(old, k)
+            new_val = getattr(new, k)
+            if old_val != new_val:
+                changes[k] = {'old': old_val, 'new': new_val}
+        return changes
 
 
 Base.metadata.create_all(engine)

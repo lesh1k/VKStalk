@@ -41,3 +41,16 @@ def get_all_digits_from_str(text):
 
 def as_client_tz(dt):
     return dt.astimezone(pytz.timezone(settings.CLIENT_TZ))
+
+
+def make_data_updates_string(data_changes):
+    updates = ""
+
+    if data_changes:
+        for key in data_changes:
+            title = key.replace("_", " ").capitalize()
+            old_val = data_changes[key]['old']
+            new_val = data_changes[key]['new']
+            updates += "\n{0}: {1} => {2}".format(title, old_val, new_val)
+
+    return updates
