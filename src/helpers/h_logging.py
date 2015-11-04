@@ -20,4 +20,5 @@ def setup_logging(user_id=0):
 def get_logger(logger_name, autoprefix=True):
     if autoprefix and settings and hasattr(settings, 'PROJECT_NAME'):
         logger_name = "{0}.{1}".format(settings.PROJECT_NAME, logger_name)
+        logger_name = logger_name.lower()
     return logging.getLogger(logger_name)

@@ -8,7 +8,7 @@ import os
 import logging
 
 
-PROJECT_NAME = "vkstalk"
+PROJECT_NAME = "VKStalk"
 VERSION = "5.0.0 ALPHA"  # this should be extracted when packaging the app
 VERSION_PRETTIFIED = prettify_project_version(VERSION)
 
@@ -90,11 +90,11 @@ LOGGING = {
         },
     },
     'loggers': {
-        '{}.console'.format(PROJECT_NAME): {
+        '{}.console'.format(PROJECT_NAME.lower()): {
             'handlers': ['console'],
             'level': 'INFO'
         },
-        '{}.file'.format(PROJECT_NAME): {
+        '{}.file'.format(PROJECT_NAME.lower()): {
             'handlers': ['file', 'error'],
             'level': 'DEBUG',
         },

@@ -5,7 +5,8 @@ from __future__ import unicode_literals
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from helpers.h_logging import get_logger
-from helpers.utils import clear_screen, as_client_tz, make_data_updates_string
+from helpers.utils import clear_screen, as_client_tz, make_data_updates_string,\
+    delta_minutes
 from core.parser import Parser
 from core.models import *
 from config import settings
@@ -59,11 +60,9 @@ class VKStalk:
                     self.user.activity_logs[-1],
                     activity_log
                 )
-            if changes['data'] or changes['activity_log']:
-                if "last_visit" not in changes['activity_log'] \
-                   or len(changes['activity_log'].keys()) > 1:
-                    self.user.activity_logs.append(activity_log)
-                    self.logs_counter += 1
+            if is_change_valid(changes):
+                self.user.activity_logs.append(activity_log)
+                self.logs_counter += 1
         except Exception, e:
             func_name = sys._getframe().f_code.co_name
             message = "Error in '{0}. Exception: {1}'".format(func_name, e)
@@ -110,3 +109,21 @@ class VKStalk:
         )
 
         return console_log
+
+
+def is_change_valid(changes):
+    # TBD. Remove this BS "Kostyl'".
+    # It is a workaround for when user waslast seen X mins ago, the last_visit
+    # timestamp for appx an hour bounces with 1 minute delta.
+    has_changes = False
+    if changes['data'] or changes['activity_log']:
+        has_changes = "last_visit" in changes['activity_log']
+
+    if has_changes:
+        has_changes = len(changes['activity_log'].keys()) > 1
+        if not has_changes:
+            minutes = delta_minutes(changes['activity_log']['last_visit']['new'],
+                                    changes['activity_log']['last_visit']['old'])
+            has_changes = minutes > 1
+
+    return has_changes

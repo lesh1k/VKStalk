@@ -41,3 +41,9 @@ def make_data_updates_string(data_changes):
             updates += "\n{0}: {1} => {2}".format(title, old_val, new_val)
 
     return updates
+
+
+def delta_minutes(now, before):
+    delta_datetime = now - before
+    minutes_ago = delta_datetime.seconds / 60
+    return minutes_ago

@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm.exc import NoResultFound
-from helpers.utils import convert_to_snake_case, as_client_tz
+from helpers.utils import convert_to_snake_case, as_client_tz, delta_minutes
 from helpers.h_logging import get_logger
 from datetime import datetime
 from config import settings
@@ -50,9 +50,8 @@ class User(BaseMixin, Base):
         else:
             now = pytz.timezone(settings.CLIENT_TZ).localize(datetime.now())
             last_visit_in_client_tz = as_client_tz(last_log.last_visit)
-            delta_datetime = now - last_visit_in_client_tz
+            minutes_ago = delta_minutes(now, last_visit_in_client_tz)
             delta_days = (now.date() - last_visit_in_client_tz.date()).days
-            minutes_ago = delta_datetime.seconds / 60
 
             if minutes_ago < 60:
                 last_seen_line = 'last seen {} minutes ago'.format(minutes_ago)
