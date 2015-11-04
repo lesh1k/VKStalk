@@ -153,7 +153,7 @@ class UserActivityLog(BaseMixin, Base):
     last_visit = Column(DateTime(timezone=True))
     # last_visit_text = Column(String)
     timestamp = Column(DateTime(timezone=True),
-                       default=datetime.now(pytz.timezone(settings.CLIENT_TZ)))
+                       default=datetime.now)
 
     @classmethod
     def from_dict(cls, data):
