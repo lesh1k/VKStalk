@@ -252,8 +252,10 @@ class Parser:
                                    text=re.compile("\d+ post."))
         if matching_items:
             wallposts_number = get_all_digits_from_str(matching_items[0].text)
-        if wallposts_number.isdigit():
-            wallposts_number = int(wallposts_number)
+            if wallposts_number.isdigit():
+                wallposts_number = int(wallposts_number)
+            else:
+                wallposts_number = -1
         else:
             wallposts_number = -1
         return wallposts_number

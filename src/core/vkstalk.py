@@ -35,7 +35,7 @@ class VKStalk:
                 'activity_log': {},
             }
 
-            keys = [i for i in user_data.keys() if i in self.user.data.__dict__.keys()]
+            keys = set(user_data.keys()) & set(self.user.data.__dict__.keys())
 
             for key in keys:
                 old_val = getattr(self.user.data, key)
