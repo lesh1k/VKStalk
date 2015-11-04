@@ -1,9 +1,11 @@
 from __future__ import unicode_literals
+from config import settings
+
 import os
 import unicodedata
 import re
 import string
-from config import settings
+import pytz
 
 
 def clear_screen():
@@ -35,3 +37,7 @@ def convert_to_snake_case(name):
 
 def get_all_digits_from_str(text):
     return ''.join([c for c in text if c.isdigit()])
+
+
+def as_client_tz(dt):
+    return dt.astimezone(pytz.timezone(settings.CLIENT_TZ))

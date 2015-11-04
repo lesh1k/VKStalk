@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-from helpers.utils import get_all_digits_from_str, clear_screen
+from helpers.utils import get_all_digits_from_str, clear_screen, as_client_tz
 from helpers.h_logging import get_logger
 from config import settings
 
@@ -41,8 +41,9 @@ class Parser:
                 cHandle.close()
                 break
             except socket.timeout, e:
-                get_logger('file').error(
-                    'Connection timed out')
+                get_logger('file').error('Connection timed out')
+                time.sleep(settings.DATA_FETCH_INTERVAL)
+                clear_screen()
             except urllib2.URLError, e:
                 if e.errno and e.errno == 101 \
                    or isinstance(e.reason, socket.gaierror):
@@ -174,7 +175,7 @@ class Parser:
             dt = pytz.timezone(settings.CLIENT_TZ).localize(dt)
         else:
             dt = pytz.timezone(settings.VK_TZ).localize(dt)
-        dt = dt.astimezone(pytz.timezone(settings.CLIENT_TZ))
+        dt = as_client_tz(dt)
         return dt
 
     def get_user_secondary_data(self):

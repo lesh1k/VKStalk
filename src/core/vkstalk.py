@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from helpers.h_logging import get_logger
-from helpers.utils import clear_screen
+from helpers.utils import clear_screen, as_client_tz
 from core.parser import Parser
 from core.models import *
 from config import settings
@@ -20,14 +20,8 @@ class VKStalk:
         get_logger('file').info('Initializing VKStalk')
         self.birth = datetime.now().strftime(settings.DATETIME_FORMAT)
         self.user = User.get_or_create_user_with_vk_id(user_id)
-
-        self.last_error = None
-        self.error_counter = 0
         self.logs_counter = 0
-
         clear_screen()
-        get_logger('console').info(
-            "VKStalk successfully launched! Have a tea and analyze the results.")
 
     def populate_user(self):
         p = Parser(self.user.url)
@@ -91,33 +85,24 @@ class VKStalk:
 
     # #####Logging part######
     def console_log(self):
-        # self.vk_logger.logger.debug('Writing log to console')
-        try:
-            log = self.generate_console_log()
-            get_logger('console').info(log)
-        except Exception as e:
-            # self.vk_logger.logger.error(
-            #     "Error in writing Data to log file and console")
-            print "Error in '{}'".format(sys._getframe().f_code.co_name)
+        log = self.generate_console_log()
+        get_logger('console').info(log)
 
     def generate_console_log(self):
-        # self.vk_logger.logger.debug('Preparing log')
-
-        # Common log to file
-        self.log = "{0} -- {1}\nStatus: {2}\n\n".format(self.user.data.name,
-                                                        self.user.last_visit_text,
-                                                        self.user.activity_logs[
-                                                            -1].status
-                                                        )
+        log_tmpl = "{0} -- {1}\nStatus: {2}\n\n"
+        self.log = log_tmpl.format(self.user.data.name,
+                                   self.user.last_visit_text,
+                                   self.user.activity_logs[-1].status,
+                                   )
 
         # Generating a timestamp and adding it to the log string
-        dt_client_now = datetime.now()
-        check_time = datetime.strftime(
-            dt_client_now, '>>> Checked on %Y-%m-%d at %H:%M:%S <<<\n\n')
+        dt_client_now = pytz.timezone(settings.SERVER_TZ).localize(datetime.now())
+        dt_client_now = as_client_tz(dt_client_now)
+        check_time = datetime.strftime(dt_client_now, settings.LOG_CHECKED_TMPL)
 
         dt_log_timestamp = self.user.activity_logs[-1].timestamp
-        log_time = datetime.strftime(
-            dt_log_timestamp, 'Date: %d-%m-%Y. Time: %H:%M:%S\n')
+        dt_log_timestamp = as_client_tz(dt_log_timestamp)
+        log_time = datetime.strftime(dt_log_timestamp, settings.LOG_DATETIME_TMPL)
 
         self.log = check_time + log_time + self.log.rstrip()
         self.log += generate_user_data_changes_string(self.changes['data'])
@@ -129,9 +114,7 @@ class VKStalk:
             self.user.vk_id,
             self.user.data.name,
             self.logs_counter,
-            self.error_counter,
-            self.log,
-            self.last_error,
+            self.log
         )
 
         return console_log
@@ -139,10 +122,7 @@ class VKStalk:
     # ######################################END logging########################
 
     def single_request(self):
-        # ConsoleLog('Fetching user data...')
-        # self.vk_logger.console_log('Fetching user data...')
         get_logger('console').info('Fetching user data...')
-        # self.vk_logger.logger.debug('Start single request')
         self.db_session = Session()
         self.db_session.add(self.user)
         self.populate_user()
@@ -150,10 +130,7 @@ class VKStalk:
         self.console_log()
         self.db_session.close()
 
-        # self.vk_logger.logger.debug('Finished single request\n\n')
-
     def work(self):
-        # self.vk_logger.logger.debug('Begin work')
         while True:
             self.single_request()
             time.sleep(settings.DATA_FETCH_INTERVAL)

@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm.exc import NoResultFound
-from helpers.utils import convert_to_snake_case
+from helpers.utils import convert_to_snake_case, as_client_tz
 from helpers.h_logging import get_logger
 from datetime import datetime
 from config import settings
@@ -36,13 +36,39 @@ class User(BaseMixin, Base):
 
     @property
     def url(self):
-        # generate user specific URLs
-        # self.logger.logger.debug('Generating URLs')
-
         if self.vk_id.isdigit():
-            return urlparse.urljoin(settings.SOURCE_URL, "id" + self.vk_id)
+            user_url = urlparse.urljoin(settings.SOURCE_URL, "id" + self.vk_id)
+        else:
+            user_url = urlparse.urljoin(settings.SOURCE_URL, self.vk_id)
+        return user_url
 
-        return urlparse.urljoin(settings.SOURCE_URL, self.vk_id)
+    @property
+    def last_visit_text(self):
+        last_log = self.activity_logs[-1]
+        if last_log.is_online:
+            last_seen_line = 'Online'
+        else:
+            now = pytz.timezone(settings.CLIENT_TZ).localize(datetime.now())
+            last_visit_in_client_tz = as_client_tz(last_log.last_visit)
+            delta_datetime = now - last_visit_in_client_tz
+            delta_days = (now.date() - last_visit_in_client_tz.date()).days
+            minutes_ago = delta_datetime.seconds / 60
+
+            if minutes_ago < 60:
+                last_seen_line = 'last seen {} minutes ago'.format(minutes_ago)
+            else:
+                if delta_days == 0:
+                    strftime_tmpl = 'last seen today at %H:%M'
+                elif delta_days == 1:
+                    strftime_tmpl = 'last seen yesterday at %H:%M'
+                else:
+                    strftime_tmpl = 'last seen on %B %d at %H:%M'
+                last_seen_line = last_visit_in_client_tz.strftime(strftime_tmpl)
+
+        if last_log.is_mobile:
+            last_seen_line += ' [Mobile]'
+
+        return last_seen_line
 
     @classmethod
     def get_or_create_user_with_vk_id(cls, vk_id):
@@ -65,34 +91,6 @@ class User(BaseMixin, Base):
             db_session.commit()
         db_session.close()
         return user
-
-    @property
-    def last_visit_text(self):
-        if self.activity_logs[-1].is_online:
-            last_seen_line = 'Online'
-        else:
-            # TBD check that self.activity_logs[-1].last_visit is actually a datetime
-            now = pytz.timezone(settings.CLIENT_TZ).localize(datetime.now())
-            delta_datetime = now - self.activity_logs[-1].last_visit
-            delta_days = (now.date() - self.activity_logs[-1].last_visit.date()).days
-            minutes_ago = delta_datetime.seconds / 60
-
-            if minutes_ago < 60:
-                last_seen_line = 'last seen {} minutes ago'.format(minutes_ago)
-            elif delta_days == 0:
-                last_seen_line = self.activity_logs[-1].last_visit.strftime(
-                    'last seen today at %H:%M')
-            elif delta_days == 1:
-                last_seen_line = self.activity_logs[-1].last_visit.strftime(
-                    'last seen yesterday at %H:%M')
-            else:
-                last_seen_line = self.activity_logs[-1].last_visit.strftime(
-                    'last seen on %B %d at %H:%M')
-
-        if self.activity_logs[-1].is_mobile:
-            last_seen_line += ' [Mobile]'
-
-        return last_seen_line
 
 
 class UserData(BaseMixin, Base):

@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from secrets import *
+from helpers.program_version import prettify_project_version
+from tzlocal import get_localzone
 
 import os
 import logging
-from secrets import *
-from helpers.program_version import prettify_project_version
 
 
 PROJECT_NAME = "vkstalk"
@@ -34,6 +35,7 @@ CONNECTION_TIMEOUT = 20  # seconds
 # Timezones
 VK_TZ = "Europe/Moscow"
 CLIENT_TZ = "Europe/Chisinau"
+SERVER_TZ = get_localzone().zone
 
 
 # Logging
@@ -43,10 +45,13 @@ CLIENT_TZ = "Europe/Chisinau"
 CONSOLE_LOG_TEMPLATE = (
     VERSION_PRETTIFIED +
     "Launched on {0}\nUser ID: {1}\nUser Name: {2}" +
-    "\nLogs written: {3}\nErrors occurred: {4}\n\n" +
-    "=" * 14 + "| LATEST LOG |" + "=" * 14 + "\n\n{5}" +
-    "=" * 14 + "| LAST ERROR |" + "=" * 14 + "\n\n{6}"
+    "\nLogs written: {3}\n\n" +
+    "=" * 14 + "| LATEST LOG |" + "=" * 14 + "\n\n{4}" +
+    "=" * 42 + "\n"
 )
+
+LOG_CHECKED_TMPL = '>>> Checked on %Y-%m-%d at %H:%M:%S <<<\n\n'
+LOG_DATETIME_TMPL = 'Date: %d-%m-%Y. Time: %H:%M:%S\n'
 
 LOGS_ROTATE_INTERVAL = 1
 LOGS_ROTATE_WHEN = "midnight"
