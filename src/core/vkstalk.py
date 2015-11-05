@@ -117,11 +117,10 @@ def is_change_valid(changes):
     # timestamp for appx an hour bounces with 1 minute delta.
     has_changes = False
     if changes['data'] or changes['activity_log']:
-        has_changes = "last_visit" in changes['activity_log']
+        has_changes = True
 
-    if has_changes:
-        has_changes = len(changes['activity_log'].keys()) > 1
-        if not has_changes:
+    if has_changes and "last_visit" in changes['activity_log']:
+        if len(changes['activity_log'].keys()) == 1:
             minutes = delta_minutes(changes['activity_log']['last_visit']['new'],
                                     changes['activity_log']['last_visit']['old'])
             has_changes = minutes > 1
