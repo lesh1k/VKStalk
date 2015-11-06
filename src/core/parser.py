@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
-from helpers.utils import get_all_digits_from_str, clear_screen, as_client_tz
+from helpers.utils import parse_int, clear_screen, as_client_tz
 from helpers.h_logging import get_logger
 from config import settings
 
@@ -156,7 +156,15 @@ class Parser:
                             minute=last_seen_time.minute)
         elif 'ago' in last_seen:
             dt = datetime.now()
-            last_seen_minutes_ago = int(get_all_digits_from_str(last_seen))
+            last_seen_minutes_ago = parse_int(last_seen)
+            try:
+                assert isinstance(last_seen_minutes_ago, int)
+            except AssertionError:
+                err = 'last_seen_minutes_ago must be int. DUMP: {0}={1}; {2}:{3}'
+                err = err.format('last_seen', last_seen,
+                                 'last_seen_minutes_ago', last_seen_minutes_ago)
+                get_logger('file').fatal(err)
+                raise
             dt = dt - timedelta(minutes=last_seen_minutes_ago)
         else:
             dt = datetime.strptime(last_seen, "last seen %d %B at %I:%M %p")
@@ -190,7 +198,7 @@ class Parser:
         matching_items = self.soup(class_='slim_header',
                                    text=re.compile("\d+ post."))
         if matching_items:
-            wallposts_number = get_all_digits_from_str(matching_items[0].text)
+            wallposts_number = parse_int(matching_items[0].text)
             if wallposts_number.isdigit():
                 wallposts_number = int(wallposts_number)
             else:
@@ -262,7 +270,7 @@ class Parser:
 
         for item in extra_data_list:
             item_parts = item.split()
-            value = get_all_digits_from_str(item)
+            value = parse_int(item)
             key = '_'.join([i.lower() for i in item_parts if i != value])
             data[key] = int(value)
         return data

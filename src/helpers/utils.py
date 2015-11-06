@@ -22,8 +22,11 @@ def convert_to_snake_case(name):
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
-def get_all_digits_from_str(text):
-    return ''.join([c for c in text if c.isdigit()])
+def parse_int(text):
+    digits = ''.join([c for c in text if c.isdigit()])
+    if digits.isdigit():
+        return int(digits)
+    return None
 
 
 def as_client_tz(dt):
