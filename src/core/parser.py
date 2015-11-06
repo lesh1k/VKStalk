@@ -45,6 +45,10 @@ class Parser:
                 time.sleep(settings.DATA_FETCH_INTERVAL)
                 clear_screen()
             except urllib2.URLError, e:
+                get_logger('file').error('URLError No. {0}. Err: {1}'.format(
+                    e.errno,
+                    e
+                ))
                 if e.errno and e.errno == 101 \
                    or isinstance(e.reason, socket.gaierror):
                     message = 'Attempt {0}. Network unavailable.'
