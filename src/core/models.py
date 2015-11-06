@@ -164,7 +164,7 @@ class UserActivityLog(BaseMixin, Base):
     @staticmethod
     def get_diff(old, new):
         changes = {}
-        excluded_attrs = ['pk', 'user_pk', 'user', 'timestamp', 'updates',
+        excluded_attrs = ['pk', 'user_pk', 'user', 'timestamp',
                           '_sa_instance_state']
         keys = [k for k in old.__dict__.keys()
                 if k not in excluded_attrs and "__" not in k]

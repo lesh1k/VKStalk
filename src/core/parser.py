@@ -199,9 +199,7 @@ class Parser:
                                    text=re.compile("\d+ post."))
         if matching_items:
             wallposts_number = parse_int(matching_items[0].text)
-            if wallposts_number.isdigit():
-                wallposts_number = int(wallposts_number)
-            else:
+            if not wallposts_number:
                 wallposts_number = -1
         else:
             wallposts_number = -1
@@ -271,6 +269,6 @@ class Parser:
         for item in extra_data_list:
             item_parts = item.split()
             value = parse_int(item)
-            key = '_'.join([i.lower() for i in item_parts if i != value])
+            key = '_'.join([i.lower() for i in item_parts if i != str(value)])
             data[key] = int(value)
         return data
