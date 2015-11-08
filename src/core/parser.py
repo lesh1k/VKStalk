@@ -150,16 +150,17 @@ class Parser:
         last_seen = self.get_user_last_seen_text()
 
         if 'today' in last_seen or 'yesterday' in last_seen:
-            if 'today' in last_seen:
-                dt = datetime.today()
-            else:
-                dt = datetime.fromordinal(datetime.today().toordinal()-1)
+            dt = pytz.timezone(settings.CLIENT_TZ).localize(datetime.now())
+            dt = dt.astimezone(pytz.timezone(settings.VK_TZ))
+            if 'yesterday' in last_seen:
+                dt = dt - timedelta(days=1)
             last_seen_time = datetime.strptime(
                 last_seen[last_seen.index("at"):], "at %I:%M %p")
             dt = dt.replace(hour=last_seen_time.hour,
                             minute=last_seen_time.minute)
         elif 'ago' in last_seen:
-            dt = datetime.now()
+            dt = pytz.timezone(settings.CLIENT_TZ).localize(datetime.now())
+            dt = dt.astimezone(pytz.timezone(settings.VK_TZ))
             last_seen_minutes_ago = parse_int(last_seen)
             try:
                 assert isinstance(last_seen_minutes_ago, int)
@@ -172,13 +173,9 @@ class Parser:
             dt = dt - timedelta(minutes=last_seen_minutes_ago)
         else:
             dt = datetime.strptime(last_seen, "last seen %d %B at %I:%M %p")
-
-        year = datetime.now().year
-        dt = dt.replace(year=year, second=0, microsecond=0)
-        if 'ago' in last_seen:
-            dt = pytz.timezone(settings.CLIENT_TZ).localize(dt)
-        else:
             dt = pytz.timezone(settings.VK_TZ).localize(dt)
+
+        dt = dt.replace(second=0, microsecond=0)
         dt = as_client_tz(dt)
         return dt
 
