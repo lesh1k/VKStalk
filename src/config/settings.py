@@ -9,7 +9,7 @@ import logging
 
 
 PROJECT_NAME = "VKStalk"
-VERSION = "5.0.0 ALPHA"  # this should be extracted when packaging the app
+VERSION = "5.0.0 BETA"  # this should be extracted when packaging the app
 VERSION_PRETTIFIED = prettify_project_version(VERSION)
 
 PROJECT_ROOT = os.path.abspath(

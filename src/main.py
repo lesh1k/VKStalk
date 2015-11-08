@@ -1,7 +1,7 @@
 from core.vkstalk import VKStalk
+from core.summarizer import write_summary
 from helpers.h_logging import setup_logging
 from helpers.h_argparse import get_args
-from core.summarizer import write_summary
 
 import sys
 import re
