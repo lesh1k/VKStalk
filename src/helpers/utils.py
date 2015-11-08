@@ -48,5 +48,5 @@ def make_data_updates_string(data_changes):
 
 def delta_minutes(now, before):
     delta_datetime = now - before
-    minutes_ago = delta_datetime.total_seconds() / 60
+    minutes_ago = int(delta_datetime.total_seconds() / 60)
     return minutes_ago

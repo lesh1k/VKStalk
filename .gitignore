@@ -1,6 +1,7 @@
 Data/
 venv/
 logs/
+summaries/
 *.pyc
 data (beta)/
 secrets.py

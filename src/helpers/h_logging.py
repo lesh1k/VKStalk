@@ -11,8 +11,6 @@ def setup_logging(user_id=0):
     except OSError as e:
         if e.errno != 17:  # (17, 'File exists')
             raise
-        print "Path '{0}' already exists, nothing to do here".format(
-            settings.LOGS_PATH)
 
     logging.config.dictConfig(settings.LOGGING)
 

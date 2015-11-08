@@ -1,13 +1,13 @@
 from __future__ import unicode_literals
 from sqlalchemy import create_engine, Column, ForeignKey, Integer, String,\
-    Boolean, Unicode, Date, DateTime
+    Boolean, Unicode, Date, DateTime, and_, func
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy.engine.url import URL
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm.exc import NoResultFound
 from helpers.utils import convert_to_snake_case, as_client_tz, delta_minutes
 from helpers.h_logging import get_logger
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import settings
 
 import urlparse
@@ -71,17 +71,21 @@ class User(BaseMixin, Base):
 
     @classmethod
     def from_vk_id(cls, vk_id):
+        user = cls.get_by_vk_id(vk_id)
         db_session = Session()
-        try:
-            user = db_session.query(cls).filter_by(vk_id=vk_id).one()
-            get_logger('file').debug(
-                'User with vk_id={} found and retrieved.'.format(vk_id))
-        except NoResultFound, e:
+        if not user:
+            # try:
+            #     user = db_session.query(cls).filter_by(vk_id=vk_id).one()
+            #     get_logger('file').debug(
+            #         'User with vk_id={} found and retrieved.'.format(vk_id))
+            # except NoResultFound, e:
             get_logger('file').debug(
                 'User with vk_id={} not found. Creating.'.format(vk_id))
             user = cls(vk_id=vk_id)
             db_session.add(user)
             db_session.commit()
+        else:
+            db_session.add(user)
 
         if not user.data:
             get_logger('file').debug(
@@ -90,6 +94,32 @@ class User(BaseMixin, Base):
             db_session.commit()
         db_session.close()
         return user
+
+    @classmethod
+    def get_by_vk_id(cls, vk_id):
+        db_session = Session()
+        try:
+            user = db_session.query(cls).filter_by(vk_id=vk_id).one()
+            get_logger('file').debug(
+                'User with vk_id={} found and retrieved.'.format(vk_id))
+        except NoResultFound, e:
+            user = None
+        db_session.close()
+        return user
+
+    def activity_for(self, start, end):
+        db_session = Session()
+        query = db_session.query(
+            func.count(UserActivityLog.status).label('status_count'),
+            UserActivityLog.status
+        ).filter(UserActivityLog.user_pk == self.pk)\
+            .filter(and_(
+                UserActivityLog.timestamp >= start,
+                UserActivityLog.timestamp <= end
+            ))\
+            .group_by(UserActivityLog.status)\
+            .order_by('status_count DESC')
+        return query.all()
 
 
 class UserData(BaseMixin, Base):
