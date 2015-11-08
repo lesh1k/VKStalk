@@ -43,7 +43,7 @@ Status: it was all about cookies
 - You can go ahead and play with settings in `src/config/settings.py`.
   - Of more interest could be: `DATA_FETCH_INTERVAL`, `MAX_CONNECTION_ATTEMPTS`, `CONNECTION_TIMEOUT`, `CONSOLE_LOG_TEMPLATE`
 - To see accepted CLI arguments run `python main.py -h`
-- To get the summary on a user run `python main.py USER_VK_ID --summary`. By default it will write the summary to a file in `PROJECT_ROOT/summaries` and also print to console. You can change this behaviour using CLI arguments.
+- To get the summary on a user run `python main.py USER_VK_ID --summary`. By default it will generate the summary for the past week and write it to a file in `PROJECT_ROOT/summaries` and also print it to console. This behaviour can be changed using CLI arguments.
 
 #####Currently it parses the following information
 - User data
