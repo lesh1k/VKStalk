@@ -8,7 +8,6 @@ import pytz
 
 
 def clear_screen():
-    # Clear screen
     os.system(['clear', 'cls'][os.name == 'nt'])
 
 
@@ -35,7 +34,6 @@ def as_client_tz(dt):
 
 def make_data_updates_string(data_changes):
     updates = ""
-
     if data_changes:
         for key in data_changes:
             title = key.replace("_", " ").capitalize()
@@ -43,7 +41,6 @@ def make_data_updates_string(data_changes):
             new_val = data_changes[key]['new']
             if new_val:
                 updates += "\n{0}: {1} => {2}".format(title, old_val, new_val)
-
     return updates
 
 
