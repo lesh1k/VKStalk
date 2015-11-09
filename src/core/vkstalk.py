@@ -31,12 +31,9 @@ class VKStalk:
 
     def single_request(self):
         get_logger('console').info('Fetching user data...')
-        self.db_session = Session()
-        self.db_session.add(self.user)
         data = self.parse_user_data()
         self.store_user_data(data)
         self.console_log()
-        self.db_session.close()
 
     def parse_user_data(self):
         p = Parser(self.user.url)
@@ -45,6 +42,8 @@ class VKStalk:
 
     def store_user_data(self, user_data):
         try:
+            db_session = Session()
+            db_session.add(self.user)
             changes = {}
             changes['data'] = UserData.get_diff(self.user.data,
                                                 UserData.from_dict(user_data))
@@ -70,11 +69,12 @@ class VKStalk:
             func_name = sys._getframe().f_code.co_name
             message = "Error in '{0}. Exception: {1}'".format(func_name, e)
             get_logger('file').fatal(message)
-            self.db_session.rollback()
+            db_session.rollback()
             get_logger('file').info("Session changes were rolled back.")
             raise
         finally:
-            self.db_session.commit()
+            db_session.commit()
+            db_session.close()
 
     def console_log(self):
         log = self.generate_console_log()
@@ -82,6 +82,8 @@ class VKStalk:
         get_logger('console').info(log)
 
     def generate_console_log(self):
+        db_session = Session()
+        db_session.add(self.user)
         log_tmpl = "{0} -- {1}\nStatus: {2}\n\n"
         self.log = log_tmpl.format(self.user.data.name,
                                    self.user.last_visit_text,
@@ -111,6 +113,7 @@ class VKStalk:
             self.log
         )
 
+        db_session.close()
         return console_log
 
 
