@@ -1,5 +1,4 @@
 from config import settings
-from core.summarizer import write_summary
 
 import argparse
 
