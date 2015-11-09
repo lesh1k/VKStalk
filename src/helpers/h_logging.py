@@ -5,7 +5,6 @@ import os
 
 
 def setup_logging(user_id=0):
-    # Makes directories for all log types, according to config.py
     try:
         os.mkdir(settings.LOGS_PATH)
     except OSError as e:
