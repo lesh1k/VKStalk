@@ -60,6 +60,7 @@ class Parser:
                     time.sleep(settings.DATA_FETCH_INTERVAL)
                     clear_screen()
                 else:
+                    import ipdb; ipdb.set_trace()
                     raise
             attempt += 1
         if not html:
