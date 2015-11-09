@@ -126,7 +126,7 @@ class UserData(BaseMixin, Base):
     user_pk = Column(Integer, ForeignKey('user.pk'))
 
     name = Column(String)
-    birthday = Column(Date)
+    birthday = Column(String)
     photo = Column(String)
     hometown = Column(String)
     site = Column(String)
