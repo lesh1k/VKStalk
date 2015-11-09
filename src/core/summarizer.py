@@ -2,14 +2,14 @@ from __future__ import unicode_literals
 from config import settings
 from datetime import datetime, timedelta
 from tabulate import tabulate
-from helpers.utils import as_client_tz
+from helpers.utils import as_client_tz, write_to_file
 from models import *
 
 import pytz
 import os
 
 
-def write_summary(user_id, max_days=settings.DEFAULT_SUMMARY_PERIOD,
+def summary(user_id, max_days=settings.DEFAULT_SUMMARY_PERIOD,
                   to_file=True, to_console=True):
     user = User.get_by_vk_id(user_id)
     if not user:
@@ -21,24 +21,13 @@ def write_summary(user_id, max_days=settings.DEFAULT_SUMMARY_PERIOD,
     if to_console:
         print summary
     if to_file:
-        db_session = Session()
-        db_session.add(user)
-        user_name = user.data.name
-        db_session.close()
-        filename = "{0}. {1} - {2}.txt".format(
-            user_name,
-            period['start'].strftime(settings.DATETIME_FORMAT),
-            period['end'].strftime(settings.DATETIME_FORMAT)
-        )
-        path = os.path.join(settings.SUMMARIES_PATH, filename)
-        file_handle = open(path, 'wb')
-        file_handle.write(summary.encode('UTF-8'))
-        file_handle.close()
+        user_name = user.get_name()
+        path = generate_summary_path(user_name, period)
+        write_to_file(path, summary, mode="wb")
         print "Summary saved to: {}".format(path)
 
 
 def setup_summarizer():
-    # Makes directories for all log types, according to config.py
     try:
         os.mkdir(settings.SUMMARIES_PATH)
     except OSError as e:
@@ -69,3 +58,13 @@ def get_period(max_days=settings.DEFAULT_SUMMARY_PERIOD):
         'end': end,
     }
     return period
+
+
+def generate_summary_path(user_name, period):
+    filename = "{0}. {1} - {2}.txt".format(
+        user_name,
+        period['start'].strftime(settings.DATETIME_FORMAT),
+        period['end'].strftime(settings.DATETIME_FORMAT)
+    )
+    path = os.path.join(settings.SUMMARIES_PATH, filename)
+    return path

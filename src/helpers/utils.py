@@ -51,3 +51,11 @@ def delta_minutes(now, before):
     delta_datetime = now - before
     minutes_ago = int(delta_datetime.total_seconds() / 60)
     return minutes_ago
+
+
+def write_to_file(path, text, mode="w+", encoding='UTF-8'):
+    file_handle = open(path, mode)
+    if isinstance(text, unicode):
+        text = text.encode(encoding)
+    file_handle.write(text)
+    file_handle.close()

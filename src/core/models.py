@@ -74,11 +74,6 @@ class User(BaseMixin, Base):
         user = cls.get_by_vk_id(vk_id)
         db_session = Session()
         if not user:
-            # try:
-            #     user = db_session.query(cls).filter_by(vk_id=vk_id).one()
-            #     get_logger('file').debug(
-            #         'User with vk_id={} found and retrieved.'.format(vk_id))
-            # except NoResultFound, e:
             get_logger('file').debug(
                 'User with vk_id={} not found. Creating.'.format(vk_id))
             user = cls(vk_id=vk_id)
@@ -120,6 +115,13 @@ class User(BaseMixin, Base):
             .group_by(UserActivityLog.status)\
             .order_by('status_count DESC')
         return query.all()
+
+    def get_name(self):
+        db_session = Session()
+        db_session.add(self)
+        user_name = self.data.name
+        db_session.close()
+        return user_name
 
 
 class UserData(BaseMixin, Base):
