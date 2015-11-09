@@ -3,9 +3,6 @@ from core.summarizer import summary
 from helpers.h_logging import setup_logging
 from helpers.h_argparse import get_args
 
-import sys
-import re
-
 
 if __name__ == "__main__":
     cli_args = vars(get_args())
