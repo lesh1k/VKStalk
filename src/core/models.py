@@ -36,10 +36,13 @@ class User(BaseMixin, Base):
 
     @property
     def url(self):
+        db_session = Session()
+        db_session.add(self)
         if self.vk_id.isdigit():
             user_url = urlparse.urljoin(settings.SOURCE_URL, "id" + self.vk_id)
         else:
             user_url = urlparse.urljoin(settings.SOURCE_URL, self.vk_id)
+        db_session.close()
         return user_url
 
     @property
