@@ -41,7 +41,8 @@ def make_data_updates_string(data_changes):
             title = key.replace("_", " ").capitalize()
             old_val = data_changes[key]['old']
             new_val = data_changes[key]['new']
-            updates += "\n{0}: {1} => {2}".format(title, old_val, new_val)
+            if new_val:
+                updates += "\n{0}: {1} => {2}".format(title, old_val, new_val)
 
     return updates
 
