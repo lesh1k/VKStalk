@@ -48,9 +48,11 @@ class VKStalk:
             changes = {}
             changes['data'] = UserData.get_diff(self.user.data,
                                                 UserData.from_dict(user_data))
-            for key in changes['data']:
-                if changes['data'][key]['new']:
-                    setattr(self.user.data, key, changes['data'][key]['new'])
+            for key, val in changes['data'].items():
+                if val['new']:
+                    setattr(self.user.data, key, val['new'])
+                else:
+                    changes['data'].pop(key, None)
 
             activity_log = UserActivityLog.from_dict(user_data)
             if changes['data']:
