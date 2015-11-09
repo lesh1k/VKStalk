@@ -10,7 +10,7 @@ import os
 
 
 def summary(user_id, max_days=settings.DEFAULT_SUMMARY_PERIOD,
-                  to_file=True, to_console=True):
+            to_file=True, to_console=True):
     user = User.get_by_vk_id(user_id)
     if not user:
         print "No data on available on user with ID: {}".format(user_id)
