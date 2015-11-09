@@ -49,7 +49,8 @@ class VKStalk:
             changes['data'] = UserData.get_diff(self.user.data,
                                                 UserData.from_dict(user_data))
             for key in changes['data']:
-                setattr(self.user.data, key, changes['data'][key]['new'])
+                if changes['data'][key]['new']:
+                    setattr(self.user.data, key, changes['data'][key]['new'])
 
             activity_log = UserActivityLog.from_dict(user_data)
             if changes['data']:
@@ -113,14 +114,16 @@ class VKStalk:
 
 def is_change_valid(changes):
     # TBD. Remove this BS "Kostyl'".
-    # It is a workaround for when user waslast seen X mins ago, the last_visit
+    # It is a workaround for when user was last seen X mins ago, the last_visit
     # timestamp for appx an hour bounces with 1 minute delta.
     has_changes = False
-    if changes['data'] or changes['activity_log']:
-        has_changes = True
+    if changes['data']:
+        return True
 
-    if has_changes and "last_visit" in changes['activity_log']:
-        if len(changes['activity_log'].keys()) == 1:
+    if changes['activity_log']:
+        has_changes = True
+        keys = changes['activity_log'].keys()
+        if "last_visit" in keys and len(keys) == 1:
             minutes = delta_minutes(changes['activity_log']['last_visit']['new'],
                                     changes['activity_log']['last_visit']['old'])
             has_changes = minutes > 1
