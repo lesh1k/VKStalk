@@ -20,10 +20,6 @@ SOURCE_URL = "http://vk.com"
 DATA_FETCH_INTERVAL = 15  # seconds
 
 
-MAIL_NOTIFICATION_HOURS = [10, 23]  # hours
-REPORT_DAYS = [6]  # day of week
-REPORT_HOURS = [10]  # hours
-MAX_FILES_PER_REPORT = 8
 DEFAULT_SUMMARY_PERIOD = 7  # days
 SUMMARIES_PATH = os.path.join(PROJECT_ROOT, 'summaries')
 
@@ -39,7 +35,6 @@ SERVER_TZ = get_localzone().zone
 
 
 # Logging
-
 DATETIME_FORMAT = "%d-%B-%Y at %H:%M"
 # self.birth, self.user_id, self.user_data['name'],
 # self.logs_counter, self.error_counter, self.log, self.last_error
@@ -98,7 +93,7 @@ LOGGING = {
         },
         '{}.file'.format(PROJECT_NAME.lower()): {
             'handlers': ['file', 'error'],
-            'level': 'DEBUG',
+            'level': 'WARNING',
         },
     },
 }

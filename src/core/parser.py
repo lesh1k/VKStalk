@@ -84,7 +84,6 @@ class Parser:
         if 'ago' in self.get_user_last_seen_text():
             self.user["last_visit_lt_an_hour_ago"] = True
 
-        # :Secondary data fectching
         user_secondary_data = self.get_user_secondary_data()
         self.user.update(user_secondary_data)
 
