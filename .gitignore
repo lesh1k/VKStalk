@@ -1,2 +1,6 @@
 Data/
 venv/
+*.pyc
+logs/
+src/
+summaries/
