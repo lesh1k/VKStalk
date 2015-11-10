@@ -45,11 +45,11 @@ class Parser:
                 time.sleep(settings.DATA_FETCH_INTERVAL)
                 clear_screen()
             except urllib2.URLError, e:
-                get_logger('file').error('URLError No. {0}. Err: {1}'.format(
-                    e.errno,
+                get_logger('file').error('URLError reason {0}. Err: {1}'.format(
+                    e.reason,
                     e
                 ))
-                if e.errno and e.errno == 101 \
+                if e.reason and e.reason.errno == 101 \
                    or isinstance(e.reason, socket.gaierror):
                     message = 'Attempt {0}. Network unavailable.'
                     message += ' Retry in {1} seconds...'
@@ -60,7 +60,6 @@ class Parser:
                     time.sleep(settings.DATA_FETCH_INTERVAL)
                     clear_screen()
                 else:
-                    import ipdb; ipdb.set_trace()
                     raise
             attempt += 1
         if not html:
