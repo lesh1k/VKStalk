@@ -30,13 +30,10 @@ class VKStalk:
             time.sleep(settings.DATA_FETCH_INTERVAL)
 
     def single_request(self):
-        try:
-            get_logger('console').info('Fetching user data...')
-            data = self.parse_user_data()
-            self.store_user_data(data)
-            self.console_log()
-        except Exception, e:
-            import ipdb; ipdb.set_trace()
+        get_logger('console').info('Fetching user data...')
+        data = self.parse_user_data()
+        self.store_user_data(data)
+        self.console_log()
 
     def parse_user_data(self):
         p = Parser(self.user.url)
