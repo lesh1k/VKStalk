@@ -162,6 +162,13 @@ class Parser:
             dt = pytz.timezone(settings.CLIENT_TZ).localize(datetime.now())
             dt = dt.astimezone(pytz.timezone(settings.VK_TZ))
             last_seen_minutes_ago = parse_int(last_seen)
+            while not last_seen_minutes_ago:
+                message = "No int found in last_visit_text. last_seen={}"
+                message = message.format(last_seen)
+                get_logger('file').error(message)
+                time.sleep(settings.DATA_FETCH_INTERVAL)
+                self.soup = self.cook_soup()
+                last_seen_minutes_ago = parse_int(last_seen)
             try:
                 assert isinstance(last_seen_minutes_ago, int)
             except AssertionError:
