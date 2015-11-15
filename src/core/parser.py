@@ -179,8 +179,12 @@ class Parser:
                 raise
             dt = dt - timedelta(minutes=last_seen_minutes_ago)
         else:
-            dt = datetime.strptime(last_seen, "last seen %d %B at %I:%M %p")
-            dt = pytz.timezone(settings.VK_TZ).localize(dt)
+            try:
+                dt = datetime.strptime(last_seen, "last seen %d %B at %I:%M %p")
+                dt = pytz.timezone(settings.VK_TZ).localize(dt)
+            except Exception, e:
+                import ipdb; ipdb.set_trace()
+                raise e
 
         dt = dt.replace(second=0, microsecond=0)
         dt = as_client_tz(dt)
