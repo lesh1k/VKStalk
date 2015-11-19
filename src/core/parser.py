@@ -62,6 +62,10 @@ class Parser:
                 else:
                     import ipdb; ipdb.set_trace()
                     raise
+            except Exception, e:
+                    import ipdb; ipdb.set_trace()
+                    raise
+                
             attempt += 1
         if not html:
             get_logger('file').fatal(
