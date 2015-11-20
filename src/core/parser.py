@@ -65,7 +65,7 @@ class Parser:
             except Exception, e:
                     import ipdb; ipdb.set_trace()
                     raise
-                
+
             attempt += 1
         if not html:
             get_logger('file').fatal(
@@ -172,6 +172,7 @@ class Parser:
                 get_logger('file').error(message)
                 time.sleep(settings.DATA_FETCH_INTERVAL)
                 self.soup = self.cook_soup()
+                last_seen = self.get_user_last_seen_text()
                 last_seen_minutes_ago = parse_int(last_seen)
             try:
                 assert isinstance(last_seen_minutes_ago, int)
