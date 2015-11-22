@@ -60,11 +60,20 @@ class Parser:
                     time.sleep(settings.DATA_FETCH_INTERVAL)
                     clear_screen()
                 else:
-                    import ipdb; ipdb.set_trace()
                     raise
-            except Exception, e:
-                    import ipdb; ipdb.set_trace()
-                    raise
+            except socket.error, e:
+                    if e.errno == 104:
+                        message = 'Attempt {0}. Socket error: {1}.'
+                        message += ' Retry in {2} seconds...'
+                        message = message.format(attempt,
+                                                 e.strerror,
+                                                 settings.DATA_FETCH_INTERVAL)
+                        get_logger('file').error(message)
+                        get_logger('console').info(message)
+                        time.sleep(settings.DATA_FETCH_INTERVAL)
+                        clear_screen()
+                    else:
+                        raise
 
             attempt += 1
         if not html:
@@ -188,7 +197,6 @@ class Parser:
                 dt = datetime.strptime(last_seen, "last seen %d %B at %I:%M %p")
                 dt = pytz.timezone(settings.VK_TZ).localize(dt)
             except Exception, e:
-                import ipdb; ipdb.set_trace()
                 raise e
 
         dt = dt.replace(second=0, microsecond=0)
