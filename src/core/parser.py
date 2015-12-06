@@ -161,6 +161,12 @@ class Parser:
             return None
 
         last_seen = self.get_user_last_seen_text()
+        while not last_seen:
+            message = "Last seen is falsey. Retry after sleep {} seconds"
+            message = message.format(settings.DATA_FETCH_INTERVAL)
+            get_logger('file').error(message)
+            time.sleep(settings.DATA_FETCH_INTERVAL)
+            last_seen = self.get_user_last_seen_text()
 
         if 'today' in last_seen or 'yesterday' in last_seen:
             dt = pytz.timezone(settings.CLIENT_TZ).localize(datetime.now())
@@ -197,6 +203,7 @@ class Parser:
                 dt = datetime.strptime(last_seen, "last seen %d %B at %I:%M %p")
                 dt = pytz.timezone(settings.VK_TZ).localize(dt)
             except Exception, e:
+                get_logger('error').error(e)
                 raise e
 
         dt = dt.replace(second=0, microsecond=0)
