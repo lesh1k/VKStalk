@@ -34,10 +34,9 @@ Status: it was all about cookies
 3. Activate virtualenv
 4. Install requirements `pip install -r requirements/base.txt`
 5. In `src/config`. Make a copy of `sample_secrets.py` and rename it to `secrets.py`
-7. In `src/config/secrets.py`
-  - Fill your database information. (By default it uses postgres, but you can try any other database, see [this](http://docs.sqlalchemy.org/en/rel_1_0/core/engines.html))
-  - Set your timezone `CLIENT_TZ`
-8. Start the app `python main.py USER_VK_ID`
+7. In `src/config/secrets.py` fill your database information. (By default it uses postgres, but you can try any other database, see [this](http://docs.sqlalchemy.org/en/rel_1_0/core/engines.html))  
+8. In `src/config/settings.py` set your timezone `CLIENT_TZ`
+9. Start the app `python main.py USER_VK_ID`
 
 #####Notes
 - You can go ahead and play with settings in `src/config/settings.py`.
