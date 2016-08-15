@@ -49,7 +49,11 @@ class Parser:
                     e.reason,
                     e
                 ))
-                if e.reason and e.reason.errno == 101 \
+		if type(e.reason) is str and e.code == 502:
+		    get_logger('file').error(e.reason)
+		    time.sleep(settings.DATA_FETCH_INTERVAL)
+	 	    clear_screen()
+                elif e.reason and e.reason.errno == 101 \
                    or isinstance(e.reason, socket.gaierror):
                     message = 'Attempt {0}. Network unavailable.'
                     message += ' Retry in {1} seconds...'
